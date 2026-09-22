@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sensory Diet Planner - Inclusive Pro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Nunito (Default, friendly), Lexend (Dyslexia-friendly) -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- SortableJS for drag-and-drop functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-color: #334155;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --focus-ring: #2563eb;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overscroll-behavior-y: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Focus Styles for Keyboard Navigation (Motor/Visual Impairments) */
+        *:focus-visible {
+            outline: 3px solid var(--focus-ring) !important;
+            outline-offset: 2px !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Drag and Drop Styling */
+        .sortable-ghost { opacity: 0.4; border: 2px dashed #94a3b8; background-color: #e2e8f0 !important; }
+        .sortable-drag { cursor: grabbing !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); transform: scale(1.02); }
+        .activity-card { cursor: grab; transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease; user-select: none; }
+        .activity-card:active { cursor: grabbing; }
+        
+        /* Checkbox completion state */
+        .activity-completed { opacity: 0.6; }
+        .activity-completed .card-title { text-decoration: line-through; }
+
+        /* --- ACCESSIBILITY THEMES --- */
+
+        /* 1. Dyslexia Friendly (Specific Learning Disability) */
+        body.a11y-dyslexia {
+            font-family: 'Lexend', sans-serif !important;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+        }
+
+        /* 2. High Contrast (Visual Impairment, Deaf-Blindness) */
+        body.a11y-high-contrast {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --focus-ring: #fbbf24; /* High visibility yellow */
+        }
+        body.a11y-high-contrast .bg-white { background-color: #111 !important; color: #fff !important; border: 1px solid #444; }
+        body.a11y-high-contrast .bg-slate-50, body.a11y-high-contrast .bg-slate-100 { background-color: #000 !important; border-color: #fff; color: #fff; }
+        body.a11y-high-contrast .activity-card { background-color: #222 !important; color: #fff !important; border: 2px solid #fff !important; box-shadow: none; }
+        body.a11y-high-contrast .text-slate-500, body.a11y-high-contrast .text-slate-700 { color: #e2e8f0 !important; }
+        body.a11y-high-contrast .filter-tab:not(.active-tab) { background-color: #333 !important; color: #fff !important; border: 1px solid #fff; }
+        body.a11y-high-contrast .active-tab { background-color: #fff !important; color: #000 !important; }
+        
+        /* 3. Low Stimulus Mode (Autism, ADHD, Emotional Disturbance) */
+        body.a11y-low-stim .cat-proprioceptive, 
+        body.a11y-low-stim .cat-vestibular, 
+        body.a11y-low-stim .cat-tactile, 
+        body.a11y-low-stim .cat-calming, 
+        body.a11y-low-stim .cat-alerting {
+            background-color: #f1f5f9 !important;
+            border-left-color: #94a3b8 !important;
+            color: #475569 !important;
+        }
+        body.a11y-low-stim .schedule-block { border-top-color: #cbd5e1 !important; }
+        body.a11y-low-stim .schedule-dropzone { background-color: #f8fafc !important; }
+
+        /* Default Category Colors */
+        .cat-proprioceptive { background-color: #e0f2fe; border-left: 4px solid #0ea5e9; color: #075985; }
+        .cat-vestibular { background-color: #ffedd5; border-left: 4px solid #f97316; color: #7c2d12; }
+        .cat-tactile { background-color: #dcfce7; border-left: 4px solid #22c55e; color: #14532d; }
+        .cat-calming { background-color: #f3e8ff; border-left: 4px solid #a855f7; color: #4c1d95; }
+        .cat-alerting { background-color: #fef9c3; border-left: 4px solid #eab308; color: #713f12; }
+
+        /* Animations */
+        @keyframes slideIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .toast-enter { animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        /* Print Media Queries */
+        @media print {
+            body { background-color: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-full-width { width: 100% !important; max-width: 100% !important; flex: none !important; height: auto !important; overflow: visible !important; }
+            .schedule-block { break-inside: avoid; border: 1px solid #000 !important; margin-bottom: 1rem; }
+            .activity-card { border: 1px solid #ccc !important; break-inside: avoid; }
+            .print-checkbox { display: inline-block !important; width: 16px; height: 16px; border: 2px solid #000; border-radius: 4px; margin-right: 8px; }
+            .interactive-elements { display: none !important; }
+        }
+        .print-checkbox { display: none; }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- ARIA Live Region for Screen Readers (Blindness/VI) -->
+    <div id="a11y-announcer" aria-live="assertive" class="sr-only"></div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm z-20 p-3 md:p-4 shrink-0 no-print flex justify-between items-center border-b-4 border-teal-500">
+        <div class="flex items-center gap-3">
+            <div class="bg-teal-100 p-2 rounded-lg text-teal-700 focus-within:ring-2 focus-within:ring-teal-500" tabindex="0" aria-label="Sensory Diet Planner Logo">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg md:text-2xl font-bold text-slate-800 leading-tight">Sensory Diet Planner</h1>
+                <p class="text-xs md:text-sm text-slate-500 hidden sm:block">Build a regulated, predictable day</p>
+            </div>
+        </div>
+        
+        <div class="flex gap-2 items-center">
+            <!-- A11y Settings Button -->
+            <button onclick="toggleA11yModal()" class="p-2 md:px-3 md:py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-sm" aria-label="Accessibility Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                <span class="hidden md:inline">Settings</span>
+            </button>
+            <button onclick="clearSchedule()" class="p-2 md:px-3 md:py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-sm" aria-label="Clear entire schedule">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <span class="hidden md:inline">Clear</span>
+            </button>
+            <button onclick="window.print()" class="p-2 md:px-3 md:py-2 text-white bg-teal-600 hover:bg-teal-700 rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-sm" aria-label="Print Schedule">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                <span class="hidden lg:inline">Print</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden max-w-[1800px] mx-auto w-full relative">
+        
+        <!-- RIGHT/BOTTOM: Activity Library -->
+        <aside class="w-full md:w-1/3 lg:w-1/4 bg-white border-t md:border-t-0 md:border-r border-slate-200 flex flex-col h-[45vh] md:h-full no-print order-2 md:order-1 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.1)] md:shadow-none z-10">
+            <div class="p-3 border-b border-slate-100 bg-slate-50 shrink-0">
+                <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2" tabindex="0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg>
+                    Activity Bank
+                </h2>
+                
+                <!-- Filter Tabs -->
+                <div class="flex gap-2 overflow-x-auto mt-3 pb-2 snap-x" role="tablist" aria-label="Activity Categories">
+                    <button onclick="filterLibrary('all')" id="tab-all" role="tab" class="filter-tab active-tab px-4 py-2 rounded-full text-sm font-bold bg-slate-800 text-white shrink-0 snap-start shadow-sm transition-transform hover:scale-105 focus:ring-2 focus:ring-offset-1 focus:ring-slate-800">All</button>
+                    <button onclick="filterLibrary('proprioceptive')" id="tab-proprioceptive" role="tab" class="filter-tab px-4 py-2 rounded-full text-sm font-bold bg-sky-50 text-sky-800 hover:bg-sky-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-sky-200">💪 Proprioceptive</button>
+                    <button onclick="filterLibrary('vestibular')" id="tab-vestibular" role="tab" class="filter-tab px-4 py-2 rounded-full text-sm font-bold bg-orange-50 text-orange-800 hover:bg-orange-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-orange-200">🤸 Vestibular</button>
+                    <button onclick="filterLibrary('tactile')" id="tab-tactile" role="tab" class="filter-tab px-4 py-2 rounded-full text-sm font-bold bg-green-50 text-green-800 hover:bg-green-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-green-200">✋ Tactile</button>
+                    <button onclick="filterLibrary('calming')" id="tab-calming" role="tab" class="filter-tab px-4 py-2 rounded-full text-sm font-bold bg-purple-50 text-purple-800 hover:bg-purple-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-purple-200">😌 Calming</button>
+                    <button onclick="filterLibrary('alerting')" id="tab-alerting" role="tab" class="filter-tab px-4 py-2 rounded-full text-sm font-bold bg-yellow-50 text-yellow-800 hover:bg-yellow-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-yellow-200">⚡ Alerting</button>
+                </div>
+            </div>
+
+            <!-- Library Items Container -->
+            <div id="library-container" class="flex-1 overflow-y-auto p-3 space-y-3 pb-6 bg-slate-50" aria-label="Available Activities List">
+                <!-- Javascript injects activity cards here -->
+            </div>
+        </aside>
+
+        <!-- LEFT/TOP: The Daily Schedule -->
+        <section class="flex-1 p-3 md:p-6 overflow-y-auto print-full-width order-1 md:order-2 h-[55vh] md:h-full pb-24 md:pb-6" aria-label="Daily Schedule Workspace">
+            
+            <!-- Print Header -->
+            <div class="hidden print:block text-center mb-8 border-b-2 border-black pb-4">
+                <h1 class="text-4xl font-bold text-black mb-2">My Daily Sensory Plan</h1>
+                <p class="text-xl text-black">Date: ________________________</p>
+            </div>
+
+            <div class="max-w-5xl mx-auto space-y-4 md:space-y-6">
+                
+                <!-- Morning Block -->
+                <div class="schedule-block bg-white rounded-2xl shadow-sm border-t-8 border-amber-300 flex flex-col focus-within:ring-2 focus-within:ring-amber-400">
+                    <div class="p-3 md:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-amber-50/30 rounded-t-xl" tabindex="0">
+                        <span class="text-3xl" aria-hidden="true">🌅</span>
+                        <div>
+                            <h3 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">Morning Routine</h3>
+                            <span class="text-xs md:text-sm text-slate-500 font-semibold">Wake up - 9:00 AM</span>
+                        </div>
+                    </div>
+                    <div id="block-morning" class="schedule-dropzone min-h-[120px] p-3 md:p-4 flex flex-wrap gap-3 items-start bg-amber-50/10" aria-label="Morning Routine Dropzone">
+                        <!-- Dropped items go here -->
+                    </div>
+                </div>
+
+                <!-- Mid-Day Block -->
+                <div class="schedule-block bg-white rounded-2xl shadow-sm border-t-8 border-sky-400 flex flex-col focus-within:ring-2 focus-within:ring-sky-400">
+                    <div class="p-3 md:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-sky-50/30 rounded-t-xl" tabindex="0">
+                        <span class="text-3xl" aria-hidden="true">☀️</span>
+                        <div>
+                            <h3 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">Mid-Day & Lunch</h3>
+                            <span class="text-xs md:text-sm text-slate-500 font-semibold">9:00 AM - 1:00 PM</span>
+                        </div>
+                    </div>
+                    <div id="block-midday" class="schedule-dropzone min-h-[120px] p-3 md:p-4 flex flex-wrap gap-3 items-start bg-sky-50/10" aria-label="Mid-Day Dropzone">
+                    </div>
+                </div>
+
+                <!-- Afternoon Block -->
+                <div class="schedule-block bg-white rounded-2xl shadow-sm border-t-8 border-orange-400 flex flex-col focus-within:ring-2 focus-within:ring-orange-400">
+                    <div class="p-3 md:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-orange-50/30 rounded-t-xl" tabindex="0">
+                        <span class="text-3xl" aria-hidden="true">🌤️</span>
+                        <div>
+                            <h3 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">Afternoon</h3>
+                            <span class="text-xs md:text-sm text-slate-500 font-semibold">1:00 PM - 5:00 PM</span>
+                        </div>
+                    </div>
+                    <div id="block-afternoon" class="schedule-dropzone min-h-[120px] p-3 md:p-4 flex flex-wrap gap-3 items-start bg-orange-50/10" aria-label="Afternoon Dropzone">
+                    </div>
+                </div>
+
+                <!-- Evening Block -->
+                <div class="schedule-block bg-white rounded-2xl shadow-sm border-t-8 border-indigo-400 flex flex-col focus-within:ring-2 focus-within:ring-indigo-400">
+                    <div class="p-3 md:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-indigo-50/30 rounded-t-xl" tabindex="0">
+                        <span class="text-3xl" aria-hidden="true">🌆</span>
+                        <div>
+                            <h3 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">Evening & Dinner</h3>
+                            <span class="text-xs md:text-sm text-slate-500 font-semibold">5:00 PM - 7:30 PM</span>
+                        </div>
+                    </div>
+                    <div id="block-evening" class="schedule-dropzone min-h-[120px] p-3 md:p-4 flex flex-wrap gap-3 items-start bg-indigo-50/10" aria-label="Evening Dropzone">
+                    </div>
+                </div>
+
+                <!-- Bedtime Block -->
+                <div class="schedule-block bg-white rounded-2xl shadow-sm border-t-8 border-purple-500 flex flex-col focus-within:ring-2 focus-within:ring-purple-400">
+                    <div class="p-3 md:p-5 border-b border-slate-100 flex flex-wrap items-center gap-3 bg-purple-50/30 rounded-t-xl" tabindex="0">
+                        <span class="text-3xl" aria-hidden="true">🌙</span>
+                        <div>
+                            <h3 class="font-bold text-lg md:text-xl text-slate-800 leading-tight">Wind Down & Bedtime</h3>
+                            <span class="text-xs md:text-sm text-slate-500 font-semibold">7:30 PM Onwards</span>
+                        </div>
+                    </div>
+                    <div id="block-bedtime" class="schedule-dropzone min-h-[120px] p-3 md:p-4 flex flex-wrap gap-3 items-start bg-purple-50/10" aria-label="Bedtime Dropzone">
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    
+    <!-- Toast Notification Area -->
+    <div id="toast-container" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 no-print" aria-hidden="true"></div>
+
+    <!-- Modal for Click-to-Add (Crucial for Motor/Cognitive Impairments) -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 id="modal-title" class="font-bold text-xl text-slate-800">Add to Schedule</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label="Close modal">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div id="modal-activity-preview" class="mb-6 flex justify-center shrink-0"></div>
+            
+            <p class="text-sm text-slate-600 mb-3 font-semibold shrink-0">Select a time block:</p>
+            
+            <div class="space-y-3 overflow-y-auto flex-1 pr-2">
+                <button onclick="addToBlockFromModal('block-morning', 'Morning Routine')" class="w-full text-left px-4 py-4 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl font-bold border-2 border-amber-200 transition-colors focus:ring-2 focus:ring-amber-500">🌅 Morning Routine</button>
+                <button onclick="addToBlockFromModal('block-midday', 'Mid-Day')" class="w-full text-left px-4 py-4 bg-sky-50 hover:bg-sky-100 text-sky-900 rounded-xl font-bold border-2 border-sky-200 transition-colors focus:ring-2 focus:ring-sky-500">☀️ Mid-Day & Lunch</button>
+                <button onclick="addToBlockFromModal('block-afternoon', 'Afternoon')" class="w-full text-left px-4 py-4 bg-orange-50 hover:bg-orange-100 text-orange-900 rounded-xl font-bold border-2 border-orange-200 transition-colors focus:ring-2 focus:ring-orange-500">🌤️ Afternoon</button>
+                <button onclick="addToBlockFromModal('block-evening', 'Evening')" class="w-full text-left px-4 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-xl font-bold border-2 border-indigo-200 transition-colors focus:ring-2 focus:ring-indigo-500">🌆 Evening & Dinner</button>
+                <button onclick="addToBlockFromModal('block-bedtime', 'Bedtime')" class="w-full text-left px-4 py-4 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-xl font-bold border-2 border-purple-200 transition-colors focus:ring-2 focus:ring-purple-500">🌙 Bedtime</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accessibility Settings Modal -->
+    <div id="a11y-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print" role="dialog" aria-labelledby="a11y-title" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col border-t-8 border-teal-500">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 id="a11y-title" class="font-bold text-2xl text-slate-800 flex items-center gap-2">
+                    <svg class="h-6 w-6 text-teal-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path></svg>
+                    Accessibility Settings
+                </h3>
+                <button onclick="toggleA11yModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-slate-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-5">
+                <!-- TTS Toggle -->
+                <label class="flex items-center justify-between cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
+                    <div>
+                        <div class="font-bold text-slate-800 text-lg">Text-to-Speech</div>
+                        <div class="text-sm text-slate-500">Reads activities aloud when clicked</div>
+                    </div>
+                    <input type="checkbox" id="toggle-tts" class="w-6 h-6 text-teal-600 rounded focus:ring-teal-500 cursor-pointer" onchange="updateSettings()">
+                </label>
+                
+                <!-- Dyslexia Font Toggle -->
+                <label class="flex items-center justify-between cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
+                    <div>
+                        <div class="font-bold text-slate-800 text-lg">Dyslexia-Friendly Font</div>
+                        <div class="text-sm text-slate-500">Improves letter spacing & readability</div>
+                    </div>
+                    <input type="checkbox" id="toggle-font" class="w-6 h-6 text-teal-600 rounded focus:ring-teal-500 cursor-pointer" onchange="updateSettings()">
+                </label>
+
+                <!-- High Contrast Toggle -->
+                <label class="flex items-center justify-between cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
+                    <div>
+                        <div class="font-bold text-slate-800 text-lg">High Contrast Mode</div>
+                        <div class="text-sm text-slate-500">Dark background, high visibility text</div>
+                    </div>
+                    <input type="checkbox" id="toggle-contrast" class="w-6 h-6 text-teal-600 rounded focus:ring-teal-500 cursor-pointer" onchange="updateSettings()">
+                </label>
+
+                <!-- Low Stimulus Toggle -->
+                <label class="flex items-center justify-between cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
+                    <div>
+                        <div class="font-bold text-slate-800 text-lg">Low Stimulus Mode</div>
+                        <div class="text-sm text-slate-500">Muted colors to reduce sensory overload</div>
+                    </div>
+                    <input type="checkbox" id="toggle-stim" class="w-6 h-6 text-teal-600 rounded focus:ring-teal-500 cursor-pointer" onchange="updateSettings()">
+                </label>
+            </div>
+            
+            <div class="p-5 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+                <button onclick="toggleA11yModal()" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-teal-300">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Expanded Data Dictionary
+        const sensoryActivities = [
+            // Proprioceptive
+            { id: 'p1', name: 'Wall Pushes', category: 'proprioceptive', icon: '🧱', desc: 'Push wall for 10 seconds (Heavy Work)' },
+            { id: 'p2', name: 'Animal Walks', category: 'proprioceptive', icon: '🐻', desc: 'Bear hugs or crab walks' },
+            { id: 'p3', name: 'Weighted Blanket', category: 'proprioceptive', icon: '🛌', desc: 'Deep pressure for 15 mins' },
+            { id: 'p4', name: 'Carry Items', category: 'proprioceptive', icon: '🛍️', desc: 'Carry books or groceries' },
+            { id: 'p5', name: 'Chewy Tube', category: 'proprioceptive', icon: '🦷', desc: 'Oral heavy work input' },
+            { id: 'p6', name: 'Trampoline', category: 'proprioceptive', icon: '🦘', desc: 'Jumping for joint compression' },
+            
+            // Vestibular
+            { id: 'v1', name: 'Swinging', category: 'vestibular', icon: '🎢', desc: 'Linear swing to calm' },
+            { id: 'v2', name: 'Therapy Ball', category: 'vestibular', icon: '⚽', desc: 'Bouncing or rolling' },
+            { id: 'v3', name: 'Spinning', category: 'vestibular', icon: '🌀', desc: 'Rotary movement (Alerting!)' },
+            { id: 'v4', name: 'Rocking Chair', category: 'vestibular', icon: '🪑', desc: 'Slow, rhythmic rocking' },
+            { id: 'v5', name: 'Balance Beam', category: 'vestibular', icon: '⚖️', desc: 'Walk a straight line' },
+            { id: 'v6', name: 'Upside Down', category: 'vestibular', icon: '🤸', desc: 'Hang head off bed/couch' },
+
+            // Tactile
+            { id: 't1', name: 'Kinetic Sand', category: 'tactile', icon: '🏖️', desc: 'Squishing and molding' },
+            { id: 't2', name: 'Play-Doh', category: 'tactile', icon: '🎨', desc: 'Kneading and rolling' },
+            { id: 't3', name: 'Water Play', category: 'tactile', icon: '🚰', desc: 'Warm (calm) / Cold (alert)' },
+            { id: 't4', name: 'Brushing', category: 'tactile', icon: '🖌️', desc: 'Therapeutic brushing' },
+            { id: 't5', name: 'Fidget Toy', category: 'tactile', icon: '🪀', desc: 'Keep hands busy' },
+            { id: 't6', name: 'Deep Massage', category: 'tactile', icon: '💆', desc: 'Firm pressure rubs' },
+
+            // Calming
+            { id: 'c1', name: 'Dim Lights', category: 'calming', icon: '💡', desc: 'Reduce visual stimulus' },
+            { id: 'c2', name: 'Headphones', category: 'calming', icon: '🎧', desc: 'Block auditory input' },
+            { id: 'c3', name: 'Deep Breathing', category: 'calming', icon: '😮‍💨', desc: 'Inhale 4s, exhale 6s' },
+            { id: 'c4', name: 'Tight Hug', category: 'calming', icon: '🫂', desc: 'Firm, sustained squeeze' },
+            { id: 'c5', name: 'Soft Music', category: 'calming', icon: '🎵', desc: 'Slow tempo, ambient' },
+            { id: 'c6', name: 'Quiet Tent', category: 'calming', icon: '⛺', desc: 'Enclosed safe space' },
+
+            // Alerting
+            { id: 'a1', name: 'Crunchy Snack', category: 'alerting', icon: '🍎', desc: 'Apples, pretzels' },
+            { id: 'a2', name: 'Cold Drink', category: 'alerting', icon: '🧊', desc: 'Ice water through straw' },
+            { id: 'a3', name: 'Upbeat Music', category: 'alerting', icon: '🥁', desc: 'Fast tempo to wake up' },
+            { id: 'a4', name: 'Bright Lights', category: 'alerting', icon: '☀️', desc: 'Increase visual input' },
+            { id: 'a5', name: 'Jumping Jacks', category: 'alerting', icon: '🏃', desc: 'Quick, active movement' },
+            { id: 'a6', name: 'Strong Smells', category: 'alerting', icon: '🍋', desc: 'Peppermint or citrus' }
+        ];
+
+        // Core App State
+        const libraryContainer = document.getElementById('library-container');
+        const announcer = document.getElementById('a11y-announcer');
+        let currentFilter = 'all';
+        let itemToAddViaModal = null;
+        let scheduleData = { morning: [], midday: [], afternoon: [], evening: [], bedtime: [] };
+        
+        // A11y Settings State
+        let settings = {
+            tts: false,
+            font: false,
+            contrast: false,
+            stim: false
+        };
+
+        const synth = window.speechSynthesis;
+
+        function createCardHTML(activity, context = 'library', instanceId = null, isCompleted = false) {
+            const bgClass = `cat-${activity.category}`;
+            // Use instanceId if provided (schedule), otherwise base id (library)
+            const domId = instanceId || activity.id;
+            
+            if (context === 'library') {
+                return `
+                    <div class="activity-card ${bgClass} w-full p-3 rounded-xl shadow-sm border border-black/5 flex flex-col group relative focus-within:ring-2 focus-within:ring-slate-800" data-id="${activity.id}" data-category="${activity.category}" tabindex="0" onkeydown="handleCardKeydown(event, '${activity.id}')">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl drop-shadow-sm" aria-hidden="true">${activity.icon}</span>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-base leading-tight">${activity.name}</h4>
+                                <p class="text-xs opacity-85 leading-tight mt-1">${activity.desc}</p>
+                            </div>
+                            <button onclick="openModal('${activity.id}')" class="interactive-elements shrink-0 text-slate-500 hover:text-slate-800 bg-white/60 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-800" aria-label="Add ${activity.name} to schedule" title="Add to schedule">+</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Schedule Context (allows marking as done and deleting)
+                const completedClass = isCompleted ? 'activity-completed' : '';
+                const checkedAttr = isCompleted ? 'checked' : '';
+                
+                return `
+                    <div class="activity-card ${bgClass} ${completedClass} w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] p-3 rounded-xl shadow-sm border border-black/5 flex flex-col relative group min-w-[140px]" data-id="${activity.id}" data-instance="${instanceId}" tabindex="0">
+                        
+                        <!-- Delete Button -->
+                        <button class="interactive-elements absolute -top-2 -right-2 bg-white border border-red-200 text-red-500 hover:bg-red-500 hover:text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 z-10" onclick="removeActivity('${instanceId}', this)" aria-label="Remove ${activity.name}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+
+                        <div class="flex items-start gap-2 mb-1">
+                            <!-- Checkbox for completion tracking (Executive Functioning support) -->
+                            <input type="checkbox" ${checkedAttr} class="interactive-elements mt-1 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" aria-label="Mark ${activity.name} as complete" onchange="toggleCompletion('${instanceId}', this)">
+                            <span class="print-checkbox"></span>
+                            
+                            <span class="text-2xl md:text-3xl drop-shadow-sm shrink-0" aria-hidden="true" onclick="speak('${activity.name}')" style="cursor:help;">${activity.icon}</span>
+                            
+                            <div class="flex-1 min-w-0" onclick="speak('${activity.name}')">
+                                <h4 class="card-title font-bold text-sm md:text-base leading-tight truncate">${activity.name}</h4>
+                                <p class="text-xs opacity-80 leading-tight mt-0.5 hidden sm:block">${activity.desc}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderLibrary() {
+            libraryContainer.innerHTML = '';
+            const filtered = currentFilter === 'all' 
+                ? sensoryActivities 
+                : sensoryActivities.filter(a => a.category === currentFilter);
+                
+            filtered.forEach(activity => {
+                libraryContainer.insertAdjacentHTML('beforeend', createCardHTML(activity, 'library'));
+            });
+        }
+
+        function filterLibrary(category) {
+            currentFilter = category;
+            
+            // Update UI tabs
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active-tab', 'bg-slate-800', 'text-white');
+                
+                // Reset to specific color classes based on ID
+                if(tab.id === 'tab-all') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0 snap-start shadow-sm transition-transform hover:scale-105";
+                if(tab.id === 'tab-proprioceptive') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-sky-50 text-sky-800 hover:bg-sky-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-sky-200";
+                if(tab.id === 'tab-vestibular') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-orange-50 text-orange-800 hover:bg-orange-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-orange-200";
+                if(tab.id === 'tab-tactile') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-green-50 text-green-800 hover:bg-green-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-green-200";
+                if(tab.id === 'tab-calming') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-purple-50 text-purple-800 hover:bg-purple-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-purple-200";
+                if(tab.id === 'tab-alerting') tab.className = "filter-tab px-4 py-2 rounded-full text-sm font-bold bg-yellow-50 text-yellow-800 hover:bg-yellow-100 shrink-0 snap-start shadow-sm transition-transform hover:scale-105 border border-yellow-200";
+            });
+
+            const activeTab = document.getElementById(`tab-${category}`);
+            if(activeTab) {
+                activeTab.className = "filter-tab active-tab px-4 py-2 rounded-full text-sm font-bold bg-slate-800 text-white shrink-0 snap-start shadow-sm transition-transform hover:scale-105 focus:ring-2 focus:ring-slate-800";
+            }
+            
+            renderLibrary();
+            speak(`Filtered by ${category === 'all' ? 'All categories' : category}`);
+        }
+
+        // Keyboard support for library cards
+        function handleCardKeydown(event, activityId) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openModal(activityId);
+            }
+        }
+
+        function initSortable() {
+            // Source: Library
+            new Sortable(libraryContainer, {
+                group: { name: 'shared', pull: 'clone', put: false },
+                sort: false,
+                animation: 150,
+                filter: '.interactive-elements', // Don't drag if clicking buttons
+                preventOnFilter: false,
+                onClone: function (evt) {
+                    const clone = evt.clone;
+                    const id = clone.getAttribute('data-id');
+                    const activity = sensoryActivities.find(a => a.id === id);
+                    if(activity) {
+                        const instanceId = 'inst_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = createCardHTML(activity, 'schedule', instanceId);
+                        clone.parentNode.replaceChild(tempDiv.firstElementChild, clone);
+                    }
+                }
+            });
+
+            // Destinations: Schedule Blocks
+            const blocks = ['morning', 'midday', 'afternoon', 'evening', 'bedtime'];
+            blocks.forEach(block => {
+                const zone = document.getElementById(`block-${block}`);
+                new Sortable(zone, {
+                    group: 'shared',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    filter: '.interactive-elements',
+                    preventOnFilter: false,
+                    onAdd: function (evt) {
+                        const item = evt.item;
+                        // Check if it needs transforming (if dropped fast, onClone might not format perfectly for destination DOM)
+                        if (!item.hasAttribute('data-instance')) {
+                            const id = item.getAttribute('data-id');
+                            const activity = sensoryActivities.find(a => a.id === id);
+                            if(activity) {
+                                const instanceId = 'inst_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = createCardHTML(activity, 'schedule', instanceId);
+                                item.parentNode.replaceChild(tempDiv.firstElementChild, item);
+                            }
+                        }
+                        saveState();
+                        speak("Activity added to schedule");
+                    },
+                    onUpdate: saveState,
+                    onRemove: saveState
+                });
+            });
+        }
+
+        function openModal(activityId) {
+            itemToAddViaModal = sensoryActivities.find(a => a.id === activityId);
+            if(itemToAddViaModal) {
+                const modalPreview = document.getElementById('modal-activity-preview');
+                // Use schedule HTML so it looks identical, but strip interactive bits for the preview
+                modalPreview.innerHTML = createCardHTML(itemToAddViaModal, 'schedule', 'preview');
+                modalPreview.querySelector('.interactive-elements')?.remove(); // remove delete
+                modalPreview.querySelector('input')?.remove(); // remove checkbox
+                
+                document.getElementById('add-modal').classList.remove('hidden');
+                speak(`Where should we add ${itemToAddToAdd.name}?`);
+                // Focus trap for accessibility
+                document.getElementById('modal-title').focus();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            itemToAddViaModal = null;
+        }
+
+        function addToBlockFromModal(blockId, blockName) {
+            if(!itemToAddViaModal) return;
+            
+            const targetBlock = document.getElementById(blockId);
+            if(targetBlock) {
+                const instanceId = 'inst_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+                targetBlock.insertAdjacentHTML('beforeend', createCardHTML(itemToAddViaModal, 'schedule', instanceId));
+                saveState();
+                showToast(`Added ${itemToAddViaModal.name} to ${blockName}`);
+                speak(`Added to ${blockName}`);
+            }
+            closeModal();
+        }
+
+        function removeActivity(instanceId, btnElement) {
+            const card = btnElement.closest('.activity-card');
+            if(card) {
+                const name = card.querySelector('h4').innerText;
+                card.remove();
+                saveState();
+                speak(`Removed ${name}`);
+            }
+        }
+
+        function toggleCompletion(instanceId, checkboxElement) {
+            const card = checkboxElement.closest('.activity-card');
+            if(checkboxElement.checked) {
+                card.classList.add('activity-completed');
+                speak("Completed");
+            } else {
+                card.classList.remove('activity-completed');
+            }
+            saveState();
+        }
+
+        function clearSchedule() {
+            if(confirm("Are you sure you want to clear your entire schedule?")) {
+                document.querySelectorAll('.schedule-dropzone').forEach(zone => zone.innerHTML = '');
+                saveState();
+                speak("Schedule cleared");
+                announcer.textContent = "Schedule cleared";
+            }
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-enter bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2';
+            toast.innerHTML = `<svg class="h-5 w-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> ${message}`;
+            container.appendChild(toast);
+            
+            announcer.textContent = message;
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function speak(text) {
+            if (!settings.tts) return;
+            synth.cancel(); // Stop current speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Slightly slower for processing
+            synth.speak(utterance);
+        }
+
+        
+        function toggleA11yModal() {
+            const modal = document.getElementById('a11y-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) {
+                document.getElementById('a11y-title').focus();
+            }
+        }
+
+        function updateSettings() {
+            settings.tts = document.getElementById('toggle-tts').checked;
+            settings.font = document.getElementById('toggle-font').checked;
+            settings.contrast = document.getElementById('toggle-contrast').checked;
+            settings.stim = document.getElementById('toggle-stim').checked;
+
+            const body = document.body;
+            
+            if(settings.font) body.classList.add('a11y-dyslexia');
+            else body.classList.remove('a11y-dyslexia');
+
+            if(settings.contrast) body.classList.add('a11y-high-contrast');
+            else body.classList.remove('a11y-high-contrast');
+
+            if(settings.stim) body.classList.add('a11y-low-stim');
+            else body.classList.remove('a11y-low-stim');
+
+            localStorage.setItem('sensoryApp_settings', JSON.stringify(settings));
+            speak("Settings updated");
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('sensoryApp_settings');
+            if(saved) {
+                settings = JSON.parse(saved);
+                document.getElementById('toggle-tts').checked = settings.tts;
+                document.getElementById('toggle-font').checked = settings.font;
+                document.getElementById('toggle-contrast').checked = settings.contrast;
+                document.getElementById('toggle-stim').checked = settings.stim;
+                updateSettings(); // Apply classes
+            }
+        }
+
+        // Save & Load Schedule Data
+        function saveState() {
+            const blocks = ['morning', 'midday', 'afternoon', 'evening', 'bedtime'];
+            let data = {};
+            
+            blocks.forEach(block => {
+                const zone = document.getElementById(`block-${block}`);
+                const items = [];
+                zone.querySelectorAll('.activity-card').forEach(card => {
+                    items.push({
+                        id: card.getAttribute('data-id'),
+                        instanceId: card.getAttribute('data-instance'),
+                        completed: card.classList.contains('activity-completed')
+                    });
+                });
+                data[block] = items;
+            });
+            
+            localStorage.setItem('sensoryApp_schedule', JSON.stringify(data));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('sensoryApp_schedule');
+            if(saved) {
+                const data = JSON.parse(saved);
+                const blocks = ['morning', 'midday', 'afternoon', 'evening', 'bedtime'];
+                
+                blocks.forEach(block => {
+                    const zone = document.getElementById(`block-${block}`);
+                    if(data[block]) {
+                        data[block].forEach(item => {
+                            const activity = sensoryActivities.find(a => a.id === item.id);
+                            if(activity) {
+                                zone.insertAdjacentHTML('beforeend', createCardHTML(activity, 'schedule', item.instanceId, item.completed));
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        // Modal backdrop click closes modal
+        document.getElementById('add-modal').addEventListener('click', (e) => {
+            if(e.target === document.getElementById('add-modal')) closeModal();
+        });
+        document.getElementById('a11y-modal').addEventListener('click', (e) => {
+            if(e.target === document.getElementById('a11y-modal')) toggleA11yModal();
+        });
+
+        // Initialize App
+        window.onload = () => {
+            renderLibrary();
+            initSortable();
+            loadSettings();
+            loadState();
+            
+            // Warm up TTS
+            if(synth.getVoices().length === 0) {
+                synth.addEventListener('voiceschanged', () => {});
+            }
+        };
+
+    </script>
+</body>
+</html>

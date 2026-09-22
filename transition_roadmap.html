@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPED Transition Roadmap System</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar-fill { transition: width 0.5s ease-out; }
+
+        /* Print specific styles for PDF export */
+        #print-container { display: none; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #print-container, #print-container * { visibility: visible; }
+            #print-container {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                padding: 20mm;
+            }
+            .page-break { page-break-before: always; }
+            .no-break { page-break-inside: avoid; }
+        }
+
+        /* Timeline styling */
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #22c55e;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #22c55e;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-gray-800">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 hidden md:flex flex-shrink-0">
+        <div class="p-6 border-b border-gray-200">
+            <h1 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-leaf text-brand-500"></i>
+                Transition Roadmap
+            </h1>
+            <p class="text-xs text-gray-500 mt-1">SPED Planning System</p>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1" id="nav-menu">
+            <button onclick="switchTab('profile')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="profile">
+                <i class="fa-solid fa-user w-5 text-center"></i> 1. Student Profile
+            </button>
+            <button onclick="switchTab('assessment')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="assessment">
+                <i class="fa-solid fa-brain w-5 text-center"></i> 2. Functional Domains
+            </button>
+            <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="dashboard">
+                <i class="fa-solid fa-chart-column w-5 text-center"></i> 3. Readiness Dashboard
+            </button>
+            <button onclick="switchTab('itp')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="itp">
+                <i class="fa-solid fa-file-contract w-5 text-center"></i> 4. Individual Plan (ITP)
+            </button>
+            <button onclick="switchTab('materials')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="materials">
+                <i class="fa-solid fa-toolbox w-5 text-center"></i> 5. Materials & Supports
+            </button>
+            <button onclick="switchTab('timeline')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-target="timeline">
+                <i class="fa-regular fa-calendar w-5 text-center"></i> 6. Transition Timeline
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div class="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Autosaved locally
+            </div>
+            <button onclick="generatePDF()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors shadow-sm font-medium text-sm">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF Report
+            </button>
+            <button onclick="clearData()" class="w-full mt-2 text-xs text-red-500 hover:text-red-700 py-1">
+                Reset All Data
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-20">
+        <h1 class="font-bold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-leaf text-brand-500"></i> Roadmap
+        </h1>
+        <button onclick="toggleMobileMenu()" class="text-gray-600">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 pt-14 md:pt-0" id="main-form">
+        <div class="flex-1 overflow-y-auto p-6 md:p-10">
+            <div class="max-w-5xl mx-auto">
+                
+                <!-- 1. STUDENT PROFILE -->
+                <section id="profile" class="tab-content active">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Student Profile</h2>
+                        <p class="text-gray-500 mt-2">Establish the learner's starting point and foundational information.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-3 mb-4 flex items-center gap-2">
+                            <i class="fa-regular fa-id-card text-brand-500"></i> Personal Information
+                        </h3>
+                        <div class="flex flex-col md:flex-row gap-6 mb-6">
+                            <!-- Photo Upload -->
+                            <div class="flex-shrink-0 flex flex-col items-center">
+                                <div id="photo-preview" class="w-32 h-32 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 overflow-hidden relative group cursor-pointer" onclick="document.getElementById('profile-photo-input').click()">
+                                    <i class="fa-solid fa-camera text-2xl group-hover:scale-110 transition-transform"></i>
+                                    <img id="profile-img-element" class="absolute inset-0 w-full h-full object-cover hidden">
+                                </div>
+                                <input type="file" id="profile-photo-input" accept="image/*" class="hidden" onchange="handleProfilePhoto(event)">
+                                <button onclick="document.getElementById('profile-photo-input').click()" class="mt-2 text-xs font-medium text-brand-600 hover:text-brand-800">Upload Photo</button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                    <input type="text" data-field="profile.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                                    <input type="number" data-field="profile.age" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                                    <input type="text" data-field="profile.grade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">School/Institution</label>
+                                    <input type="text" data-field="profile.school" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Disability Category</label>
+                                    <input type="text" data-field="profile.disability" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assessment</label>
+                                    <input type="date" data-field="profile.date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Communication Method</label>
+                                    <input type="text" placeholder="e.g., Verbal, AAC, Sign" data-field="profile.communication" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Family/Guardian</label>
+                                    <input type="text" data-field="profile.guardian" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 border-b pb-3 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-star text-yellow-500"></i> Learner Strengths & Interests
+                            </h3>
+                            <textarea data-field="profile.strengths" rows="6" placeholder="List academic, social, motor strengths, talents, and preferences..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 border-b pb-3 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-hand-holding-heart text-blue-500"></i> Areas of Support Needed
+                            </h3>
+                            <textarea data-field="profile.needs" rows="6" placeholder="List areas needing support (academic, behavioral, sensory, physical, daily living)..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. FUNCTIONAL DOMAINS & ASSESSMENT -->
+                <section id="assessment" class="tab-content">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Functional Domains</h2>
+                        <p class="text-gray-500 mt-2">Assess readiness, track progress, and define goals across essential life domains. Adjust the slider to estimate current independence level.</p>
+                    </div>
+
+                    <div id="domains-container" class="space-y-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- 3. READINESS DASHBOARD -->
+                <section id="dashboard" class="tab-content">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Transition Readiness Dashboard</h2>
+                        <p class="text-gray-500 mt-2">Visual representation of independence across domains. Note: High support needs in one area do not invalidate independence in another.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                        <div id="dashboard-charts" class="space-y-5">
+                            <!-- Populated by JS -->
+                        </div>
+                        
+                        <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-800 flex gap-3">
+                            <i class="fa-solid fa-circle-info mt-0.5"></i>
+                            <p><strong>Note:</strong> This dashboard is not a single "readiness score." It highlights domain-specific progress. A learner can be highly independent in digital skills while still requiring substantial support in transportation.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. INDIVIDUAL TRANSITION PLAN -->
+                <section id="itp" class="tab-content">
+                    <div class="mb-8 flex justify-between items-end">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Individual Transition Plan (ITP)</h2>
+                            <p class="text-gray-500 mt-2">Formal synthesis of vocational goals, safety requirements, and milestones.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-6">
+                        
+                        <div class="bg-brand-50 p-4 rounded-lg border border-brand-100">
+                            <label class="block text-lg font-bold text-brand-900 mb-2">Post-School Goal / Vocational Target</label>
+                            <p class="text-sm text-brand-700 mb-2">After graduation, the student would like to pursue...</p>
+                            <textarea data-field="itp.postSchoolGoal" rows="3" placeholder="e.g., Supported employment in a community-based printing shop (sublimation printing)." class="w-full px-3 py-2 border border-white rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none shadow-sm"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2">Current Strengths (Auto-synced)</label>
+                                <textarea data-field="profile.strengths" rows="4" class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm" readonly></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2">Functional Skills to Develop</label>
+                                <textarea data-field="itp.skillsToDevelop" rows="4" placeholder="e.g., Workplace communication, Money handling, Following multi-step instructions..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-bullseye text-orange-500"></i> Short-Term Objectives (0-6 mos)
+                                </label>
+                                <textarea data-field="itp.shortTermGoals" rows="4" placeholder="e.g., Master basic sublimation equipment operation with full supervision." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-flag-checkered text-brand-600"></i> Long-Term Goals (Annual+)
+                                </label>
+                                <textarea data-field="itp.longTermGoals" rows="4" placeholder="e.g., Independently fulfill custom mug orders using sublimation printing." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-hard-hat text-yellow-600"></i> Workplace Safety & Compliance
+                                </label>
+                                <textarea data-field="itp.safetyCompliance" rows="3" placeholder="e.g., Uses thermal gloves for heat press, unplugs machines after use, identifies safety hazards..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-clipboard-check text-blue-500"></i> OJT & Vocational Milestones
+                                </label>
+                                <textarea data-field="itp.ojtMilestones" rows="3" placeholder="e.g., 50 hours of sheltered workshop, 100 hours of community-based OJT..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2">Required Supports & Network</label>
+                                <textarea data-field="itp.supports" rows="3" placeholder="SPED Teacher, Job Coach, Family, LGU, Specific Visual Aids..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2">Living Arrangement Plan</label>
+                                <textarea data-field="itp.livingArrangement" rows="3" placeholder="e.g., Supported living, family home with increased autonomy..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2 border-b pb-2">General Action Timeline</label>
+                            <textarea data-field="itp.actionTimeline" rows="3" placeholder="Year 1: Internal skill development...&#10;Year 2: Sheltered OJT..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 5. MATERIALS & SUPPORTS -->
+                <section id="materials" class="tab-content">
+                    <div class="mb-8 flex justify-between items-end flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Materials & Visual Supports</h2>
+                            <p class="text-gray-500 mt-2">Document necessary equipment, AAC devices, token boards, accommodations and visual schedules.</p>
+                        </div>
+                        <button onclick="addMaterialCard()" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors shadow-sm font-medium text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add Material
+                        </button>
+                    </div>
+
+                    <div id="materials-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+                <!-- 6. TRANSITION TIMELINE -->
+                <section id="timeline" class="tab-content">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Transition Timeline Reference</h2>
+                        <p class="text-gray-500 mt-2">A visual guide of the transition journey from early preparation to adulthood.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                        <div class="relative border-l-2 border-brand-200 ml-4 md:ml-10 space-y-12 pb-4">
+                            
+                            <!-- Phase 1 -->
+                            <div class="timeline-item relative pl-8">
+                                <div class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs inline-block mb-2">Ages 3–7</div>
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-seedling text-green-500"></i> Early Preparation
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Communication</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Self-care</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Making Choices</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Routines</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Social participation</span>
+                                </div>
+                            </div>
+
+                            <!-- Phase 2 -->
+                            <div class="timeline-item relative pl-8">
+                                <div class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs inline-block mb-2">Ages 8–11</div>
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-fan text-yellow-500"></i> Skill Development
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Functional academics</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Independence</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Responsibility</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Community exposure</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Identifying Interests</span>
+                                </div>
+                            </div>
+
+                            <!-- Phase 3 -->
+                            <div class="timeline-item relative pl-8">
+                                <div class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs inline-block mb-2">Ages 12–14</div>
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-compass text-blue-500"></i> Exploration
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Career awareness</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Self-advocacy</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Understanding Strengths</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Future goals</span>
+                                </div>
+                            </div>
+
+                            <!-- Phase 4 -->
+                            <div class="timeline-item relative pl-8">
+                                <div class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs inline-block mb-2">Ages 15–18</div>
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-graduation-cap text-purple-500"></i> Transition Preparation
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Career preparation</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Work experience</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Independent living</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Financial literacy</span>
+                                    <span class="bg-gray-100 px-3 py-1 rounded border border-gray-200">Community participation</span>
+                                </div>
+                            </div>
+
+                            <!-- Phase 5 -->
+                            <div class="timeline-item relative pl-8">
+                                <div class="bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs inline-block mb-2">18+ Years</div>
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-rocket text-red-500"></i> Post-School Transition
+                                </h3>
+                                <div class="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                                    <span class="bg-brand-100 text-brand-800 px-3 py-1 rounded border border-brand-200 font-medium">Employment</span>
+                                    <span class="bg-brand-100 text-brand-800 px-3 py-1 rounded border border-brand-200 font-medium">Higher education/training</span>
+                                    <span class="bg-brand-100 text-brand-800 px-3 py-1 rounded border border-brand-200 font-medium">Independent living</span>
+                                    <span class="bg-brand-100 text-brand-800 px-3 py-1 rounded border border-brand-200 font-medium">Lifelong learning</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="h-20"></div> <!-- Bottom padding -->
+            </div>
+        </div>
+    </main>
+
+    <!-- HIDDEN CONTAINER FOR PDF EXPORT -->
+    <div id="print-container">
+        <!-- Content will be injected here via JS right before printing -->
+    </div>
+
+    <script>
+        // --- Data Structure & Domains Definition ---
+        const domainDefinitions = [
+            { id: 'communication', icon: 'fa-comments', color: 'text-blue-500', bg: 'bg-blue-500', title: 'Communication & Expression', desc: 'Ability to express needs, understand others, and use AAC if applicable.',
+              skills: ['Expresses basic wants and needs', 'Uses AAC device/system independently', 'Follows multi-step directions', 'Initiates interactions/conversations', 'Understands non-verbal cues', 'Expresses preferences and makes choices'] },
+            { id: 'self_advocacy', icon: 'fa-bullhorn', color: 'text-orange-500', bg: 'bg-orange-500', title: 'Self-Determination & Advocacy', desc: 'Making choices, setting goals, understanding rights, and requesting accommodations.',
+              skills: ['Makes independent daily choices', 'Identifies own personal strengths', 'Identifies areas needing support', 'Requests accommodations when needed', 'Participates in IEP/ITP meetings', 'Recognizes and reports unsafe situations'] },
+            { id: 'education', icon: 'fa-book-open', color: 'text-indigo-500', bg: 'bg-indigo-500', title: 'Education & Functional Academics', desc: 'School routines, study habits, postsecondary planning, functional reading/math.',
+              skills: ['Follows daily school routines', 'Completes assignments with minimal support', 'Functional reading (signs, menus, forms)', 'Functional math (time, measurement, quantities)', 'Maintains attention to given tasks', 'Manages a daily schedule or planner'] },
+            { id: 'employment', icon: 'fa-briefcase', color: 'text-emerald-500', bg: 'bg-emerald-500', title: 'Career & Employment', desc: 'Pre-employment skills, workplace routines, career exploration, task completion.',
+              skills: ['Demonstrates punctuality & attendance', 'Follows workplace safety rules', 'Completes assigned routine tasks', 'Accepts constructive feedback appropriately', 'Asks for help when needed', 'Dresses appropriately for work environments'] },
+            { id: 'independent_living', icon: 'fa-house', color: 'text-teal-500', bg: 'bg-teal-500', title: 'Independent Living & Care', desc: 'Personal hygiene, household chores, meal prep, managing personal space.',
+              skills: ['Independent bathing and grooming', 'Selects appropriate clothing for weather/events', 'Prepares simple snacks and meals', 'Completes basic chores (laundry, sweeping)', 'Manages own daily medication routine', 'Recognizes basic household emergencies'] },
+            { id: 'money', icon: 'fa-coins', color: 'text-yellow-600', bg: 'bg-yellow-600', title: 'Financial Literacy', desc: 'Identifying money, budgeting, purchases, banking basics, financial safety.',
+              skills: ['Identifies local coins and bills', 'Understands basic values and prices', 'Makes basic purchases and retrieves change', 'Follows a simple weekly budget', 'Understands basic banking (ATM, savings)', 'Protects financial info (scam awareness)'] },
+            { id: 'transportation', icon: 'fa-bus', color: 'text-cyan-500', bg: 'bg-cyan-500', title: 'Transportation & Mobility', desc: 'Navigating community, using public transit, road safety, planning routes.',
+              skills: ['Demonstrates pedestrian safety (crossing streets)', 'Navigates familiar indoor environments', 'Uses public transportation (bus, jeepney, train)', 'Plans a simple route to a destination', 'Handles getting lost (knows who/how to ask for help)'] },
+            { id: 'community', icon: 'fa-city', color: 'text-fuchsia-500', bg: 'bg-fuchsia-500', title: 'Community Participation', desc: 'Shopping, utilizing government services, attending events, restaurants.',
+              skills: ['Shops for personal items independently', 'Orders food/drinks at a restaurant', 'Utilizes community facilities (parks, library)', 'Locates restrooms in public settings', 'Demonstrates appropriate public behavior'] },
+            { id: 'health', icon: 'fa-heart-pulse', color: 'text-rose-500', bg: 'bg-rose-500', title: 'Health & Wellness', desc: 'Medication management, hygiene, nutrition, attending appointments, mental health.',
+              skills: ['Communicates physical pain or illness', 'Understands basic healthy nutrition', 'Engages in regular physical activity', 'Practices stress management techniques', 'Attends medical appointments with minimal support'] },
+            { id: 'safety', icon: 'fa-shield-halved', color: 'text-red-600', bg: 'bg-red-600', title: 'Personal Safety', desc: 'Emergency contacts, boundaries, online safety, recognizing exploitation.',
+              skills: ['Knows emergency contacts (name, phone number)', 'Understands personal physical boundaries', 'Identifies safe vs. unsafe touch', 'Recognizes and avoids online strangers/scams', 'Follows fire/earthquake safety procedures'] },
+            { id: 'social', icon: 'fa-users', color: 'text-violet-500', bg: 'bg-violet-500', title: 'Social & Relationships', desc: 'Making friends, healthy relationships, cooperation, conflict resolution.',
+              skills: ['Initiates and maintains friendships', 'Shares and takes turns in activities', 'Resolves minor conflicts calmly', 'Understands concept of consent in relationships', 'Communicates via phone/text with network'] },
+            { id: 'digital', icon: 'fa-laptop', color: 'text-slate-600', bg: 'bg-slate-600', title: 'Digital & Tech Skills', desc: 'Using devices, digital communication, online safety, basic software.',
+              skills: ['Operates a smartphone or tablet', 'Uses email or messaging apps appropriately', 'Navigates online maps or GPS', 'Protects passwords and privacy', 'Fills out digital forms/applications'] },
+            { id: 'recreation', icon: 'fa-palette', color: 'text-pink-500', bg: 'bg-pink-500', title: 'Recreation & Leisure', desc: 'Hobbies, sports, relaxation, community clubs, active lifestyle.',
+              skills: ['Participates in individual hobbies', 'Joins group recreational activities', 'Plans leisure time independently', 'Explores new interests and activities', 'Balances work/school with relaxation'] }
+        ];
+
+        let state = {
+            profile: { name: '', age: '', grade: '', school: '', disability: '', date: '', communication: '', guardian: '', strengths: '', needs: '', photoUrl: '' },
+            domains: {},
+            itp: { postSchoolGoal: '', skillsToDevelop: '', shortTermGoals: '', longTermGoals: '', safetyCompliance: '', ojtMilestones: '', supports: '', livingArrangement: '', actionTimeline: '' },
+            materials: []
+        };
+
+        // Initialize empty domain states
+        domainDefinitions.forEach(d => {
+            state.domains[d.id] = { score: 0, notes: '', checkedSkills: [] };
+        });
+
+        // --- Core Functions ---
+
+        function init() {
+            loadData();
+            renderDomains();
+            renderDashboard();
+            renderMaterials();
+            populateForm();
+            setupAutoSave();
+            
+            // Set initial date if empty
+            if(!state.profile.date) {
+                document.querySelector('[data-field="profile.date"]').valueAsDate = new Date();
+                saveData();
+            }
+
+            // Load Profile Photo
+            if(state.profile.photoUrl) {
+                const imgEl = document.getElementById('profile-img-element');
+                imgEl.src = state.profile.photoUrl;
+                imgEl.classList.remove('hidden');
+                document.querySelector('#photo-preview i').classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Show target
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update nav styles
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-gray-100', 'text-gray-900', 'font-semibold');
+                if(el.dataset.target === tabId) {
+                    el.classList.add('bg-gray-100', 'text-gray-900', 'font-semibold');
+                }
+            });
+
+            // Close mobile menu if open
+            const aside = document.querySelector('aside');
+            if (window.innerWidth < 768 && !aside.classList.contains('hidden')) {
+                aside.classList.add('hidden');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const aside = document.querySelector('aside');
+            aside.classList.toggle('hidden');
+            aside.classList.toggle('absolute');
+            aside.classList.toggle('h-full');
+            aside.classList.toggle('w-full');
+            aside.classList.toggle('z-50');
+        }
+
+        function renderDomains() {
+            const container = document.getElementById('domains-container');
+            container.innerHTML = '';
+
+            domainDefinitions.forEach(domain => {
+                const data = state.domains[domain.id];
+                
+                // Generate skills checklist
+                const skillsHtml = domain.skills.map((skill, index) => {
+                    const isChecked = data.checkedSkills && data.checkedSkills.includes(skill) ? 'checked' : '';
+                    return `
+                        <label class="flex items-start space-x-3 text-sm text-gray-700 cursor-pointer p-2 hover:bg-gray-50 rounded-lg border border-transparent hover:border-gray-200 transition-colors">
+                            <input type="checkbox" class="mt-1 rounded text-brand-600 focus:ring-brand-500 w-4 h-4"
+                                onchange="toggleSkill('${domain.id}', '${skill}', this.checked)" ${isChecked}>
+                            <span class="leading-tight">${skill}</span>
+                        </label>
+                    `;
+                }).join('');
+
+                const html = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full ${domain.bg} text-white flex items-center justify-center text-sm shadow-sm">
+                                    <i class="fa-solid ${domain.icon}"></i>
+                                </div>
+                                ${domain.title}
+                            </h3>
+                            <div class="text-right">
+                                <span class="text-2xl font-black ${domain.color}" id="val-${domain.id}">${data.score}%</span>
+                                <div class="text-xs text-gray-500 font-medium">Independence Level</div>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <p class="text-sm text-gray-600 mb-6">${domain.desc}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Specific Skills Assessment</label>
+                                    <div class="space-y-1 bg-gray-50/50 p-2 rounded-lg border border-gray-100">
+                                        ${skillsHtml}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <div class="mb-6">
+                                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Overall Independence Estimate</label>
+                                        <div class="flex justify-between text-xs text-gray-400 font-medium mb-2 px-1">
+                                            <span>Full Support</span>
+                                            <span>Moderate</span>
+                                            <span>Independent</span>
+                                        </div>
+                                        <input type="range" min="0" max="100" step="5" value="${data.score}" 
+                                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                                            oninput="updateDomainScore('${domain.id}', this.value)">
+                                    </div>
+                                    <div class="flex-1 flex flex-col">
+                                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Notes & Action Plan</label>
+                                        <textarea class="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-sm outline-none transition-all resize-none min-h-[100px]"
+                                            oninput="updateDomainNotes('${domain.id}', this.value)" placeholder="Note specific accommodations, strategies, and next steps needed...">${data.notes || ''}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function toggleSkill(domainId, skill, isChecked) {
+            if(!state.domains[domainId].checkedSkills) state.domains[domainId].checkedSkills = [];
+            
+            if(isChecked) {
+                if(!state.domains[domainId].checkedSkills.includes(skill)) {
+                    state.domains[domainId].checkedSkills.push(skill);
+                }
+            } else {
+                state.domains[domainId].checkedSkills = state.domains[domainId].checkedSkills.filter(s => s !== skill);
+            }
+            saveData();
+        }
+
+        function updateDomainScore(id, val) {
+            document.getElementById(`val-${id}`).innerText = `${val}%`;
+            state.domains[id].score = parseInt(val);
+            saveData();
+            updateDashboardProgress(id, val);
+        }
+
+        function updateDomainNotes(id, text) {
+            state.domains[id].notes = text;
+            saveData();
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('dashboard-charts');
+            container.innerHTML = '';
+
+            domainDefinitions.forEach(domain => {
+                const score = state.domains[domain.id].score;
+                const html = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-48 text-sm font-semibold text-gray-700 truncate" title="${domain.title}">
+                            ${domain.title.split('&')[0].trim()} <!-- Shortened name -->
+                        </div>
+                        <div class="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden relative border border-gray-200 shadow-inner">
+                            <div id="bar-${domain.id}" class="${domain.bg} h-full progress-bar-fill" style="width: ${score}%"></div>
+                        </div>
+                        <div class="w-12 text-right text-sm font-bold text-gray-600 font-mono">
+                            <span id="dash-val-${domain.id}">${score}</span>%
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function updateDashboardProgress(id, val) {
+            const bar = document.getElementById(`bar-${id}`);
+            const text = document.getElementById(`dash-val-${id}`);
+            if(bar) bar.style.width = `${val}%`;
+            if(text) text.innerText = val;
+        }
+
+        // --- Materials & Photos Logic ---
+
+        function handleProfilePhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                resizeAndCompressImage(file, 400, (base64Str) => {
+                    state.profile.photoUrl = base64Str;
+                    saveData();
+                    const imgEl = document.getElementById('profile-img-element');
+                    imgEl.src = base64Str;
+                    imgEl.classList.remove('hidden');
+                    document.querySelector('#photo-preview i').classList.add('hidden');
+                });
+            }
+        }
+
+        function addMaterialCard() {
+            const newId = 'mat_' + Date.now();
+            state.materials.push({ id: newId, title: '', description: '', image: '' });
+            saveData();
+            renderMaterials();
+        }
+
+        function deleteMaterial(id) {
+            if(confirm("Remove this material/support?")) {
+                state.materials = state.materials.filter(m => m.id !== id);
+                saveData();
+                renderMaterials();
+            }
+        }
+
+        function updateMaterialField(id, field, value) {
+            const mat = state.materials.find(m => m.id === id);
+            if(mat) {
+                mat[field] = value;
+                saveData();
+            }
+        }
+
+        function handleMaterialImage(event, id) {
+            const file = event.target.files[0];
+            if(file) {
+                resizeAndCompressImage(file, 600, (base64Str) => {
+                    updateMaterialField(id, 'image', base64Str);
+                    renderMaterials();
+                });
+            }
+        }
+
+        function renderMaterials() {
+            const container = document.getElementById('materials-grid');
+            container.innerHTML = '';
+            
+            if(!state.materials || state.materials.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                        <i class="fa-solid fa-box-open text-4xl text-gray-300 mb-3"></i>
+                        <h3 class="text-gray-500 font-medium">No materials added yet</h3>
+                        <p class="text-sm text-gray-400 mt-1">Add visual schedules, AAC devices, sensory tools, etc.</p>
+                    </div>`;
+                return;
+            }
+
+            state.materials.forEach(mat => {
+                const imgContent = mat.image 
+                    ? `<img src="${mat.image}" class="w-full h-48 object-cover object-center cursor-pointer" onclick="document.getElementById('img-input-${mat.id}').click()">`
+                    : `<div class="w-full h-48 bg-gray-100 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-200 transition-colors" onclick="document.getElementById('img-input-${mat.id}').click()">
+                            <i class="fa-solid fa-camera text-3xl mb-2"></i>
+                            <span class="text-sm font-medium">Upload Image</span>
+                       </div>`;
+
+                const html = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative group">
+                        <input type="file" id="img-input-${mat.id}" accept="image/*" class="hidden" onchange="handleMaterialImage(event, '${mat.id}')">
+                        ${imgContent}
+                        <div class="p-4">
+                            <input type="text" value="${mat.title}" oninput="updateMaterialField('${mat.id}', 'title', this.value)" placeholder="Material / Support Name" class="w-full text-lg font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-brand-500 outline-none mb-2 transition-colors">
+                            <textarea rows="3" oninput="updateMaterialField('${mat.id}', 'description', this.value)" placeholder="Describe how and when this support is used..." class="w-full text-sm text-gray-600 border border-transparent hover:border-gray-300 focus:border-brand-500 rounded p-1 outline-none resize-none transition-colors">${mat.description}</textarea>
+                        </div>
+                        <button onclick="deleteMaterial('${mat.id}')" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow flex items-center justify-center hover:bg-red-600">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // Resizes and compresses image to save localStorage space (Canvas approach)
+        function resizeAndCompressImage(file, maxSize, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height && width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG format with 0.7 quality
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    callback(dataUrl);
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function setupAutoSave() {
+            const inputs = document.querySelectorAll('[data-field]');
+            inputs.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const fieldPath = e.target.getAttribute('data-field').split('.');
+                    if (fieldPath.length === 2) {
+                        state[fieldPath[0]][fieldPath[1]] = e.target.value;
+                        saveData();
+                        
+                        // Sync specific fields if needed (like strengths to ITP)
+                        if(fieldPath[0] === 'profile' && fieldPath[1] === 'strengths') {
+                             document.querySelector('textarea[data-field="profile.strengths"]:not(:focus)').value = e.target.value;
+                        }
+                    }
+                });
+            });
+        }
+
+        function populateForm() {
+            const inputs = document.querySelectorAll('[data-field]');
+            inputs.forEach(input => {
+                const fieldPath = input.getAttribute('data-field').split('.');
+                if (fieldPath.length === 2) {
+                    input.value = state[fieldPath[0]][fieldPath[1]] || '';
+                }
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('sped_roadmap_data', JSON.stringify(state));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('sped_roadmap_data');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    // Merge saved data with default structure to avoid missing keys if schema updates
+                    state = { ...state, profile: { ...state.profile, ...parsed.profile }, itp: { ...state.itp, ...parsed.itp } };
+                    
+                    // Migrate 'annualGoals' to 'longTermGoals' if loading older save data
+                    if(parsed.itp && parsed.itp.annualGoals && !parsed.itp.longTermGoals) {
+                        state.itp.longTermGoals = parsed.itp.annualGoals;
+                    }
+
+                    if(parsed.materials) state.materials = parsed.materials;
+
+                    if(parsed.domains) {
+                         domainDefinitions.forEach(d => {
+                            if(parsed.domains[d.id]) {
+                                state.domains[d.id] = { ...state.domains[d.id], ...parsed.domains[d.id] };
+                            }
+                         });
+                    }
+                } catch (e) {
+                    console.error("Error loading saved data", e);
+                }
+            }
+        }
+
+        function clearData() {
+            if(confirm("Are you sure you want to clear all data? This cannot be undone.")) {
+                localStorage.removeItem('sped_roadmap_data');
+                location.reload();
+            }
+        }
+
+        function buildPrintHTML() {
+            // Generate clean HTML strictly for PDF rendering
+            let html = `
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5; font-size: 14px;">
+                    <h1 style="text-align: center; color: #16a34a; border-bottom: 2px solid #16a34a; padding-bottom: 10px;">Comprehensive Transition Roadmap</h1>
+                    
+                    <!-- Section 1: Profile -->
+                    <table style="width: 100%; margin-top: 20px;">
+                        <tr>
+                            <td style="width: 120px; vertical-align: top; padding-right: 15px;">
+                                ${state.profile.photoUrl ? `<img src="${state.profile.photoUrl}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc;">` : `<div style="width: 100px; height: 100px; background: #eee; border-radius: 8px; text-align: center; line-height: 100px; color: #aaa; font-size: 10px;">No Photo</div>`}
+                            </td>
+                            <td style="vertical-align: top;">
+                                <h2 style="background: #f3f4f6; padding: 6px 10px; border-left: 4px solid #16a34a; margin-top: 0; font-size: 16px;">1. Student Profile</h2>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <tr>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>Name:</strong> ${state.profile.name || '___'}</td>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>Age/Grade:</strong> ${state.profile.age || '_'} / ${state.profile.grade || '___'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>Disability:</strong> ${state.profile.disability || '___'}</td>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>School:</strong> ${state.profile.school || '___'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>Communication:</strong> ${state.profile.communication || '___'}</td>
+                                        <td style="padding: 4px; border-bottom: 1px solid #ddd;"><strong>Date:</strong> ${state.profile.date || '___'}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-top: 15px;">
+
+                    <!-- Section 2: Dashboard/Assessment Summary -->
+                    <h2 style="background: #f3f4f6; padding: 8px; border-left: 4px solid #3b82f6;">2. Transition Readiness Assessment</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #e5e7eb;">
+                                <th style="text-align: left; padding: 8px; border: 1px solid #ccc;">Domain</th>
+                                <th style="text-align: center; padding: 8px; border: 1px solid #ccc; width: 100px;">Independence</th>
+                                <th style="text-align: left; padding: 8px; border: 1px solid #ccc;">Notes / Action Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            domainDefinitions.forEach(domain => {
+                const data = state.domains[domain.id];
+                html += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ccc; font-weight: bold;">${domain.title}</td>
+                        <td style="padding: 8px; border: 1px solid #ccc; text-align: center;">${data.score}%</td>
+                        <td style="padding: 8px; border: 1px solid #ccc; white-space: pre-wrap; font-size: 12px;">${data.notes || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+
+                    <div class="page-break"></div>
+
+                    <!-- Section 2: Detailed Assessment Summary -->
+                    <h2 style="background: #f3f4f6; padding: 8px; border-left: 4px solid #3b82f6;">2. Detailed Transition Assessment</h2>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            `;
+
+            domainDefinitions.forEach(domain => {
+                const data = state.domains[domain.id];
+                const checkedList = data.checkedSkills && data.checkedSkills.length > 0 
+                                    ? data.checkedSkills.map(s => `• ${s}`).join('<br>') 
+                                    : '<i>No specific skills marked mastered.</i>';
+
+                html += `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ccc; width: 30%; background: #fafafa; vertical-align: top;">
+                            <strong style="font-size: 15px;">${domain.title}</strong><br>
+                            <span style="font-size: 11px; color: #666;">Est. Independence: <b>${data.score}%</b></span>
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ccc; width: 35%; vertical-align: top; font-size: 12px; line-height: 1.4;">
+                            <strong style="color: #4b5563;">Demonstrated Skills:</strong><br>
+                            ${checkedList}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ccc; width: 35%; vertical-align: top; white-space: pre-wrap; font-size: 12px; line-height: 1.4;">
+                            <strong style="color: #4b5563;">Notes & Next Steps:</strong><br>${data.notes || '-'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </table>
+
+                    <div class="page-break"></div>
+
+                    <!-- Section 3: ITP -->
+                    <h2 style="background: #f3f4f6; padding: 8px; border-left: 4px solid #8b5cf6;">3. Individual Transition Plan (ITP)</h2>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #16a34a; font-size: 16px;">Post-School Goal / Vocational Target:</strong>
+                        <p style="white-space: pre-wrap; background: #f0fdf4; padding: 10px; border: 1px solid #bbf7d0;">${state.itp.postSchoolGoal || 'No goal defined.'}</p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong style="color: #f97316;">Short-Term Objectives (0-6 mos):</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.shortTermGoals || '-'}</span>
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong style="color: #16a34a;">Long-Term Goals (Annual+):</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.longTermGoals || '-'}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong style="color: #ca8a04;">Workplace Safety & Compliance:</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.safetyCompliance || '-'}</span>
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong style="color: #3b82f6;">OJT & Vocational Milestones:</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.ojtMilestones || '-'}</span>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-bottom: 15px;">
+                        <strong>Functional Skills to Develop:</strong>
+                        <p style="white-space: pre-wrap; padding: 10px; border: 1px solid #ccc; font-size: 13px;">${state.itp.skillsToDevelop || '-'}</p>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <strong>Required Supports & Network:</strong>
+                        <p style="white-space: pre-wrap; padding: 10px; border: 1px solid #ccc; font-size: 13px;">${state.itp.supports || '-'}</p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong>Living Arrangement Plan:</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.livingArrangement || '-'}</span>
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                                <strong>General Action Timeline:</strong><br>
+                                <span style="white-space: pre-wrap; font-size: 13px;">${state.itp.actionTimeline || '-'}</span>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- Section 4: Materials & Supports -->
+                    ${state.materials && state.materials.length > 0 ? `
+                    <div class="page-break"></div>
+                    <h2 style="background: #f3f4f6; padding: 8px; border-left: 4px solid #f59e0b;">4. Visual Supports & Required Materials</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                        ${state.materials.map((mat, i) => {
+                            if (i % 2 === 0) return `<tr><td style="width: 50%; padding: 10px; vertical-align: top; border: 1px solid #eee;">
+                                ${mat.image ? `<img src="${mat.image}" style="width: 100%; height: 150px; object-fit: contain; background: #fafafa; border: 1px solid #ddd; border-radius: 4px;">` : `<div style="height: 150px; background:#f9f9f9; border: 1px solid #ddd; text-align:center; line-height: 150px; color:#aaa; font-size:11px;">No Image Provided</div>`}
+                                <h4 style="margin: 8px 0 4px 0; font-size: 14px;">${mat.title || 'Untitled Support'}</h4>
+                                <p style="margin: 0; font-size: 12px; color: #555; white-space: pre-wrap;">${mat.description || 'No description.'}</p>
+                            </td>` + (i + 1 === state.materials.length ? `<td style="width: 50%; padding: 10px;"></td></tr>` : '');
+                            
+                            return `<td style="width: 50%; padding: 10px; vertical-align: top; border: 1px solid #eee;">
+                                ${mat.image ? `<img src="${mat.image}" style="width: 100%; height: 150px; object-fit: contain; background: #fafafa; border: 1px solid #ddd; border-radius: 4px;">` : `<div style="height: 150px; background:#f9f9f9; border: 1px solid #ddd; text-align:center; line-height: 150px; color:#aaa; font-size:11px;">No Image Provided</div>`}
+                                <h4 style="margin: 8px 0 4px 0; font-size: 14px;">${mat.title || 'Untitled Support'}</h4>
+                                <p style="margin: 0; font-size: 12px; color: #555; white-space: pre-wrap;">${mat.description || 'No description.'}</p>
+                            </td></tr>`;
+                        }).join('')}
+                    </table>
+                    ` : ''}
+
+                    <div style="margin-top: 60px; page-break-inside: avoid;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="text-align: center; border-top: 1px solid #333; padding-top: 5px; width: 40%;">Educator Signature</td>
+                                <td style="width: 20%;"></td>
+                                <td style="text-align: center; border-top: 1px solid #333; padding-top: 5px; width: 40%;">Parent/Guardian Signature</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function generatePDF() {
+            // Show a visual cue
+            const btn = document.querySelector('button[onclick="generatePDF()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+            btn.disabled = true;
+
+            const printContainer = document.getElementById('print-container');
+            printContainer.innerHTML = buildPrintHTML();
+            printContainer.style.display = 'block';
+
+            const opt = {
+                margin:       10,
+                filename:     `Transition_Plan_${state.profile.name ? state.profile.name.replace(/\s+/g, '_') : 'Student'}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Generate PDF from the hidden container
+            html2pdf().set(opt).from(printContainer).save().then(() => {
+                // Restore UI
+                printContainer.style.display = 'none';
+                printContainer.innerHTML = '';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error("PDF generation error", err);
+                alert("An error occurred while generating the PDF. Please try again.");
+                printContainer.style.display = 'none';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // Run setup on load
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

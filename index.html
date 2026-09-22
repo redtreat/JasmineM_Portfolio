@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jasmine M. | SPED Educator Portfolio</title>
+    <meta name="description" content="Special Education Portfolio of Jasmine M. featuring templates, resources, and inclusive educational materials.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Loading ALL KINDS OF ROBOTO -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,300..700;1,300..700&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'sped-dark': '#2e2910',   /* Dark Brown/Olive */
+                        'sped-green': '#2c5745',  /* Forest Green */
+                        'sped-cream': '#ebe3a7',  /* Cream */
+                        'sped-orange': '#eb7d00', /* Bright Orange */
+                        /* High Contrast Colors */
+                        'hc-bg': '#000000',
+                        'hc-text': '#FFFF00',
+                        'hc-link': '#00FFFF',
+                    },
+                    fontFamily: {
+                        'sans': ['Roboto', 'sans-serif'],
+                        'condensed': ['"Roboto Condensed"', 'sans-serif'],
+                        'slab': ['"Roboto Slab"', 'serif'],
+                        'mono': ['"Roboto Mono"', 'monospace'],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(46, 41, 16, 0.15)',
+                        'hard': '4px 4px 0px 0px rgba(46, 41, 16, 1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Accessibility Styles */
+        :root {
+            --focus-color: #eb7d00;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            transition: all 0.3s ease;
+        }
+
+        /* Visible Focus Rings for Keyboard Navigation */
+        *:focus-visible {
+            outline: 4px solid var(--focus-color) !important;
+            outline-offset: 4px !important;
+            border-radius: 4px;
+        }
+
+        /* High Contrast Mode Override */
+        body.high-contrast {
+            background-color: #000000 !important;
+            color: #FFFF00 !important;
+            --focus-color: #00FFFF;
+        }
+        
+        body.high-contrast * {
+            background-color: #000000 !important;
+            color: #FFFF00 !important;
+            border-color: #FFFF00 !important;
+        }
+
+        body.high-contrast button, body.high-contrast a {
+            border: 2px solid #FFFF00 !important;
+        }
+
+        /* Large Text Mode */
+        body.large-text {
+            font-size: 125%;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #ebe3a7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2c5745;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2e2910;
+        }
+
+        /* Toast Animation */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideInUp 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-sped-cream text-sped-dark font-sans antialiased min-h-screen flex flex-col selection:bg-sped-orange selection:text-white">
+
+    <aside class="fixed right-0 top-1/4 z-50 bg-white shadow-soft rounded-l-xl border-y border-l border-sped-dark/10 p-2 flex flex-col gap-3" aria-label="Accessibility Tools">
+        <button id="btn-tts" class="p-3 rounded-full bg-sped-cream hover:bg-sped-orange hover:text-white text-sped-dark transition-colors focus:ring-2 focus:ring-sped-orange group relative" aria-label="Toggle Text to Speech Read Aloud" onclick="toggleTTS()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            <span class="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-max bg-sped-dark text-sped-cream text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-condensed">Read Page</span>
+        </button>
+        <button id="btn-magnifier" class="p-3 rounded-full bg-sped-cream hover:bg-sped-green hover:text-white text-sped-dark transition-colors focus:ring-2 focus:ring-sped-orange group relative" aria-label="Toggle Magnifier Lens" onclick="toggleMagnifier()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            <span class="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-max bg-sped-dark text-sped-cream text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-condensed">Magnifier Lens</span>
+        </button>
+        <button id="btn-contrast" class="p-3 rounded-full bg-sped-cream hover:bg-sped-dark hover:text-sped-cream text-sped-dark transition-colors focus:ring-2 focus:ring-sped-orange group relative" aria-label="Toggle High Contrast Mode" onclick="toggleContrast()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z"></path></svg>
+            <span class="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-max bg-sped-dark text-sped-cream text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-condensed">High Contrast</span>
+        </button>
+        <button id="btn-textsize" class="p-3 rounded-full bg-sped-cream hover:bg-sped-green hover:text-white text-sped-dark transition-colors focus:ring-2 focus:ring-sped-orange group relative" aria-label="Toggle Large Text" onclick="toggleTextSize()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+            <span class="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-max bg-sped-dark text-sped-cream text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-condensed">Large Text</span>
+        </button>
+    </aside>
+
+    <header class="w-full bg-sped-dark text-sped-cream sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-sped-orange text-white rounded-full flex items-center justify-center font-slab font-bold text-2xl shadow-inner border-2 border-sped-cream">
+                        JM
+                    </div>
+                    <div>
+                        <h1 class="font-slab text-2xl font-bold tracking-wide">JASMINE M.</h1>
+                        <p class="font-condensed text-sm text-sped-cream/80 uppercase tracking-widest">Special Education Educator</p>
+                    </div>
+                </div>
+                <nav aria-label="Main Navigation" class="hidden md:flex gap-8 font-condensed text-lg">
+                    <a href="#about" class="hover:text-sped-orange transition-colors py-2 border-b-2 border-transparent hover:border-sped-orange">About</a>
+                    <a href="#philosophy" class="hover:text-sped-orange transition-colors py-2 border-b-2 border-transparent hover:border-sped-orange">Philosophy</a>
+                    <a href="#resources" class="hover:text-sped-orange transition-colors py-2 border-b-2 border-transparent hover:border-sped-orange">Resources</a>
+                    <a href="#contact" class="hover:text-sped-orange transition-colors py-2 border-b-2 border-transparent hover:border-sped-orange">Contact</a>
+                    <a href="#rights" class="hover:text-sped-orange transition-colors py-2 border-b-2 border-transparent hover:border-sped-orange">Terms of Use</a>
+                </nav>
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-sped-cream hover:text-sped-orange focus:outline-none focus:ring-2 focus:ring-sped-orange rounded" aria-label="Toggle mobile menu" aria-expanded="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+        
+        <div id="mobile-menu" class="hidden md:hidden bg-sped-dark border-t border-sped-cream/10 px-4 pt-2 pb-6 space-y-1 shadow-inner">
+            <a href="#about" class="block px-3 py-2 rounded-md font-condensed text-lg hover:bg-sped-orange hover:text-white transition-colors">About</a>
+            <a href="#philosophy" class="block px-3 py-2 rounded-md font-condensed text-lg hover:bg-sped-orange hover:text-white transition-colors">Philosophy</a>
+            <a href="#resources" class="block px-3 py-2 rounded-md font-condensed text-lg hover:bg-sped-orange hover:text-white transition-colors">Resources</a>
+            <a href="#contact" class="block px-3 py-2 rounded-md font-condensed text-lg hover:bg-sped-orange hover:text-white transition-colors">Contact</a>
+            <a href="#rights" class="block px-3 py-2 rounded-md font-condensed text-lg hover:bg-sped-orange hover:text-white transition-colors">Terms of Use</a>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section id="about" class="relative bg-sped-green text-white overflow-hidden py-20 lg:py-32" aria-labelledby="hero-heading">
+            <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+                <svg class="absolute -top-24 -left-24 w-96 h-96 text-sped-cream" fill="currentColor" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"></circle></svg>
+                <svg class="absolute bottom-10 right-10 w-64 h-64 text-sped-orange" fill="currentColor" viewBox="0 0 100 100"><polygon points="50,0 100,100 0,100"></polygon></svg>
+            </div>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center gap-12">
+                <div class="flex-1 space-y-6">
+                    <div class="inline-block px-4 py-1 rounded-full bg-sped-orange/20 border border-sped-orange text-sped-orange font-mono text-sm font-bold tracking-wide uppercase">
+                        Inclusive Education Focus
+                    </div>
+                    <h2 id="hero-heading" class="font-slab text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+                        Empowering Every Learner, Every Day.
+                    </h2>
+                    <p class="font-sans text-lg md:text-xl text-sped-cream max-w-2xl leading-relaxed">
+                        Welcome to my professional portfolio. I develop highly structured, evidence-based Special Education resources designed with accessibility at the forefront, supporting diverse learning styles, including visual, auditory, mobility, and cognitive accommodations.
+                    </p>
+                    <div class="pt-4 flex flex-wrap gap-4">
+                        <a href="#resources" class="bg-sped-orange hover:bg-[#c96a00] text-white font-condensed text-lg px-8 py-3 rounded shadow-hard transition-transform active:translate-y-1 active:shadow-none font-bold">
+                            View Resources
+                        </a>
+                    </div>
+                </div>
+                <div class="flex-1 hidden md:flex justify-center" aria-hidden="true">
+                    <div class="relative w-80 h-80">
+                        <div class="absolute inset-0 bg-sped-cream rounded-full opacity-20 animate-pulse"></div>
+                        <div class="absolute inset-4 bg-sped-orange rounded-full flex items-center justify-center text-5xl shadow-2xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- REPLACED: Credentials section changed to Core Teaching Principles -->
+        <section id="philosophy" class="py-20 bg-white" aria-labelledby="philosophy-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 space-y-4">
+                    <h2 id="philosophy-heading" class="font-slab text-4xl font-bold text-sped-dark">Core Teaching Principles</h2>
+                    <p class="font-sans text-lg max-w-3xl mx-auto opacity-80">
+                        Dedicated to creating accessible, empowering, and inclusive educational environments for every learner.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-sped-cream/30 p-8 rounded-xl border border-sped-dark/10 shadow-sm text-center hover:-translate-y-1 transition-transform duration-300">
+                        <div class="w-16 h-16 bg-sped-green text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <h3 class="font-slab text-xl font-bold text-sped-dark mb-2">Universal Design</h3>
+                        <p class="font-sans text-sped-dark/80">Proactively designing learning experiences that are inherently accessible and effective for diverse student profiles.</p>
+                    </div>
+                    <div class="bg-sped-cream/30 p-8 rounded-xl border border-sped-dark/10 shadow-sm text-center hover:-translate-y-1 transition-transform duration-300">
+                        <div class="w-16 h-16 bg-sped-orange text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        </div>
+                        <h3 class="font-slab text-xl font-bold text-sped-dark mb-2">Evidence-Based</h3>
+                        <p class="font-sans text-sped-dark/80">Utilizing robust, data-driven interventions and proven methodologies to guide behavioral and academic growth.</p>
+                    </div>
+                    <div class="bg-sped-cream/30 p-8 rounded-xl border border-sped-dark/10 shadow-sm text-center hover:-translate-y-1 transition-transform duration-300">
+                        <div class="w-16 h-16 bg-sped-dark text-sped-cream rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        </div>
+                        <h3 class="font-slab text-xl font-bold text-sped-dark mb-2">Student Autonomy</h3>
+                        <p class="font-sans text-sped-dark/80">Empowering students through self-monitoring tools, self-advocacy skills, and transition readiness.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resources" class="py-20" aria-labelledby="resources-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 space-y-4">
+                    <h2 id="resources-heading" class="font-slab text-4xl font-bold text-sped-dark">Professional Resources</h2>
+                    <p class="font-sans text-lg max-w-3xl mx-auto opacity-80">
+                        A curated collection of my structural templates and tools for Special Education. 
+                        <strong>All files are intellectual property of Jasmine M.</strong> Each PDF is fully automated with fillable form fields and embedded tracking codes, designed to save teachers time while protecting original work.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="resource-grid">
+                    <!-- Cards populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-20 bg-sped-green text-white" aria-labelledby="contact-heading">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12 space-y-4">
+                    <h2 id="contact-heading" class="font-slab text-4xl font-bold">Let's Connect</h2>
+                    <p class="font-sans text-lg text-sped-cream max-w-2xl mx-auto">
+                        Interested in collaborating, seeking consultation, or have questions about my resources? Send me a message!
+                    </p>
+                </div>
+                
+                <form class="bg-white p-8 rounded-xl shadow-soft text-sped-dark flex flex-col gap-6" onsubmit="event.preventDefault(); showToast('Message sent! I will get back to you soon.', 'success'); this.reset();">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex flex-col gap-2">
+                            <label for="name" class="font-condensed font-bold text-sm tracking-wide uppercase">Your Name</label>
+                            <input type="text" id="name" required placeholder="Jane Doe" class="p-3 rounded border border-sped-dark/20 focus:outline-none focus:border-sped-orange focus:ring-1 focus:ring-sped-orange transition-all bg-sped-cream/10 font-sans">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="email" class="font-condensed font-bold text-sm tracking-wide uppercase">Email Address</label>
+                            <input type="email" id="email" required placeholder="jane@example.com" class="p-3 rounded border border-sped-dark/20 focus:outline-none focus:border-sped-orange focus:ring-1 focus:ring-sped-orange transition-all bg-sped-cream/10 font-sans">
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label for="message" class="font-condensed font-bold text-sm tracking-wide uppercase">Message</label>
+                        <textarea id="message" rows="4" required placeholder="How can I help you today?" class="p-3 rounded border border-sped-dark/20 focus:outline-none focus:border-sped-orange focus:ring-1 focus:ring-sped-orange transition-all bg-sped-cream/10 resize-none font-sans"></textarea>
+                    </div>
+                    <button type="submit" class="bg-sped-orange hover:bg-[#c96a00] text-white font-condensed text-lg px-8 py-3 rounded shadow-md transition-transform active:translate-y-1 active:shadow-none font-bold self-start focus:ring-4 focus:ring-offset-2 focus:ring-sped-orange">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section id="rights" class="bg-white py-16 border-t-4 border-sped-orange" aria-labelledby="rights-heading">
+            <div class="max-w-4xl mx-auto px-4 text-center space-y-6">
+                <div class="w-16 h-16 mx-auto bg-sped-dark text-sped-cream rounded-full flex items-center justify-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M14.83 14.83a4 4 0 1 1 0-5.66"></path></svg>
+                </div>
+                <h2 id="rights-heading" class="font-slab text-3xl font-bold text-sped-dark">Intellectual Property Notice</h2>
+                <p class="font-sans text-lg text-sped-dark/80 leading-relaxed">
+                    All materials provided in this portfolio are the exclusive property of <strong>Jasmine M.</strong> 
+                    Downloads are strictly for personal, educational, and classroom use. Redistribution, modification for resale, 
+                    or commercial use without explicit written permission is strictly prohibited. 
+                    <br><br>
+                    <span class="font-mono bg-sped-cream px-2 py-1 rounded text-sm text-sped-green">Security Notice: These PDFs are automated for educator efficiency and embedded with automated tracking codes to track file origins. Please respect the copyright.</span>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-sped-dark text-sped-cream py-10 text-center font-condensed">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4">
+            <div class="w-10 h-10 bg-sped-orange text-white rounded-full flex items-center justify-center font-slab font-bold text-xl">
+                JM
+            </div>
+            <p>&copy; <span id="current-year"></span> Jasmine M. All Rights Reserved.</p>
+            <p class="text-sm opacity-60 max-w-xl mx-auto">
+                Designed with Universal Design for Learning (UDL) principles. Accessible UI supporting screen readers, high contrast, and diverse learners of all abilities.
+            </p>
+        </div>
+    </footer>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 pointer-events-none" aria-live="polite"></div>
+
+    <div id="download-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-sped-dark/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300" aria-modal="true" role="dialog">
+        <div class="bg-sped-cream p-8 rounded-xl max-w-md w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="modal-content">
+            <h3 class="font-slab text-2xl font-bold text-sped-dark mb-4">Accept Terms of Use</h3>
+            <p class="font-sans text-sped-dark/80 mb-6">
+                By downloading this file, you acknowledge that it is the intellectual property of <strong>Jasmine M.</strong> 
+                You agree to use it solely for educational purposes and not distribute it as your own. <br><br>
+                <strong class="text-sped-orange">Please note:</strong> Your downloaded file is fully automated with fillable form fields and embedded tracking codes.
+            </p>
+            <div class="flex justify-end gap-4 font-condensed">
+                <button onclick="closeModal()" class="px-5 py-2 rounded text-sped-dark hover:bg-sped-dark/10 transition-colors font-bold">Cancel</button>
+                <button id="confirm-download-btn" class="px-5 py-2 rounded bg-sped-orange hover:bg-[#c96a00] text-white shadow-md font-bold transition-colors">I Agree, Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVIEW MODAL -->
+    <div id="preview-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-sped-dark/90 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300" aria-modal="true" role="dialog" aria-labelledby="preview-title">
+        <div class="bg-white p-0 rounded-xl max-w-5xl w-full mx-4 h-[90vh] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col overflow-hidden" id="preview-content">
+            <div class="flex justify-between items-center p-4 bg-sped-cream border-b border-sped-dark/10 shrink-0">
+                <h3 class="font-slab text-xl font-bold text-sped-dark" id="preview-title">Document Preview</h3>
+                <button onclick="closePreview()" class="text-sped-dark hover:text-sped-orange transition-colors p-1" aria-label="Close Preview">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="flex-grow bg-gray-200 w-full h-full relative">
+                <!-- Fallback message in case iframe doesn't load PDF properly -->
+                <div class="absolute inset-0 flex items-center justify-center text-gray-500 font-sans -z-10 px-4 text-center">
+                    <p>Loading PDF Preview... (If this stays blank, your browser might not support embedded PDFs. You can still download the file securely.)</p>
+                </div>
+                <!-- REAL PDF RENDERER -->
+                <iframe id="pdf-preview-frame" class="w-full h-full border-none relative z-10 bg-transparent" src="" type="application/pdf"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // --- THE ACTUAL PDF FILE PATHS ---
+        const pdfFilePaths = {
+            'iep-temp': 'resources/IEP_Template_JasmineM.pdf',
+            'fba-bip': 'resources/FBA_BIP_Template_JasmineM.pdf',
+            'assess-chk': 'resources/Assessment_Checklist_JasmineM.pdf',
+            'behav-con': 'resources/Behavioral_Contract_JasmineM.pdf',
+            'self-eval': 'resources/Self_Evaluation_JasmineM.pdf',
+            'pbis-tok': 'resources/PBIS_Token_Reward_JasmineM.pdf',
+            'intern-admin': 'resources/Internship_Admin_File_JasmineM.pdf'
+        };
+
+        const filesData = [
+            { id: 'iep-temp', title: 'IEP TEMPLATE', desc: 'Comprehensive Individualized Education Program framework.', icon: 'clipboard', htmlLink: 'interactive-iep.html' },
+            { id: 'fba-bip', title: 'FBA & BIP TEMPLATE', desc: 'Functional Behavior Assessment & Behavior Intervention Plan.', icon: 'activity' },
+            { id: 'assess-chk', title: 'ASSESSMENT CHECKLIST', desc: 'Structured checklist for student evaluations and milestones.', icon: 'check-square' },
+            { id: 'behav-con', title: 'BEHAVIORAL CONTRACT', desc: 'Clear, student-friendly agreement for behavior management.', icon: 'edit' },
+            { id: 'self-eval', title: 'SELF EVALUATION TEMPLATE', desc: 'Promotes student autonomy and self-reflection.', icon: 'user-check' },
+            { id: 'pbis-tok', title: 'PBIS TOKEN REWARD', desc: 'Printable token economy system for Positive Behavior Support.', icon: 'star' },
+            { id: 'intern-admin', title: 'INTERNSHIP ADMIN FILE', desc: 'Administrative tracking for SPED internships and placements.', icon: 'folder' },
+            { id: 'sensory-diet', title: 'SENSORY DIET PLANNER', desc: 'Interactive drag-and-drop daily sensory activity scheduler.', icon: 'clock', htmlLink: 'sensory_diet_planner.html', htmlText: 'Launch App', noPdf: true },
+            
+            // UPDATED: Transition Roadmap is now an active HTML App Launcher!
+            { id: 'trans-road', title: 'TRANSITION ROADMAP', desc: 'Interactive planner for post-secondary goals and independent living skills.', icon: 'clock', htmlLink: 'transition_roadmap.html', htmlText: 'Launch App', noPdf: true },
+            
+            { id: 'aac-board', title: 'AAC COMMUNICATION BOARD', desc: 'Interactive web-based Augmentative and Alternative Communication board.', icon: 'speaker', htmlLink: 'inclusive_aac_communicator_categorized.html', htmlText: 'Launch App', noPdf: true }
+        ];
+
+        const icons = {
+            'clipboard': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2-2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>',
+            'activity': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+            'check-square': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>',
+            'edit': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
+            'user-check': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>',
+            'star': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+            'folder': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
+            'clock': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+            'speaker': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>',
+            'eye': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'
+        };
+
+        const grid = document.getElementById('resource-grid');
+        let currentFileToDownload = null;
+
+        function getDownloadCount(id) {
+            let count = localStorage.getItem(`dl_${id}`);
+            if (!count) {
+                count = Math.floor(Math.random() * 105) + 15;
+                if(id.startsWith('blank')) count = 0;
+                localStorage.setItem(`dl_${id}`, count);
+            }
+            return parseInt(count);
+        }
+
+        function setDownloadCount(id, count) {
+            localStorage.setItem(`dl_${id}`, count);
+            document.getElementById(`count-${id}`).textContent = count;
+        }
+
+        filesData.forEach(file => {
+            const isComingSoon = file.id.startsWith('blank');
+            const noPdf = file.noPdf === true;
+            const count = getDownloadCount(file.id);
+            
+            const card = document.createElement('article');
+            card.className = `bg-white hover:bg-[#fff6e5] rounded-xl overflow-hidden shadow-soft hover:shadow-xl border-t-4 border-sped-green hover:border-sped-orange flex flex-col transition-all duration-300 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-sped-orange focus-within:bg-[#fff6e5] outline-none h-full relative group`;
+            card.setAttribute('aria-labelledby', `title-${file.id}`);
+            
+            card.innerHTML = `
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="w-12 h-12 bg-sped-cream text-sped-green group-hover:bg-sped-orange group-hover:text-white transition-colors duration-300 rounded flex items-center justify-center mb-4 shadow-sm">
+                        ${icons[file.icon]}
+                    </div>
+                    
+                    <div class="absolute top-4 right-4 flex gap-2">
+                        <button onclick="playCardAudio('${file.title}', '${file.desc}')" class="p-2 bg-sped-cream text-sped-dark hover:bg-sped-orange hover:text-white rounded-full shadow-sm transition-colors focus:ring-2 focus:ring-sped-orange focus:outline-none" aria-label="Read description aloud" title="Read Aloud">
+                            ${icons['speaker']}
+                        </button>
+                        <button onclick="openPreview('${file.id}', '${file.title}')" class="${isComingSoon || noPdf ? 'hidden' : 'p-2 bg-sped-cream text-sped-dark hover:bg-sped-green hover:text-white rounded-full shadow-sm transition-colors focus:ring-2 focus:ring-sped-green focus:outline-none'}" aria-label="Preview ${file.title}" title="Preview Document">
+                            ${icons['eye']}
+                        </button>
+                    </div>
+
+                    <h3 id="title-${file.id}" class="font-slab text-xl font-bold text-sped-dark mb-2 pr-16">${file.title}</h3>
+                    <p class="font-sans text-sped-dark/70 text-sm mb-4 flex-grow">${file.desc}</p>
+                    
+                    <div class="flex flex-col gap-3 mt-auto pt-4 border-t border-sped-cream">
+                        <div class="flex items-center gap-1.5 text-sped-dark/60 font-mono text-sm" aria-label="${count} downloads">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span id="count-${file.id}">${count}</span>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            ${file.htmlLink ? `<a href="${file.htmlLink}" target="_blank" rel="noopener noreferrer" class="flex-1 bg-sped-orange hover:bg-[#c96a00] text-white text-sm px-2 py-2 rounded font-condensed font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-sped-orange shadow-sm hover:shadow active:scale-95 text-center flex items-center justify-center">${file.htmlText || 'Fill Online'}</a>` : ''}
+                            ${!noPdf ? `
+                            <button 
+                                onclick="initiateDownload('${file.id}', '${file.title}')"
+                                class="flex-1 ${isComingSoon ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-sped-green hover:bg-[#224436] text-white shadow-sm hover:shadow active:scale-95'} text-sm px-2 py-2 rounded font-condensed font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-sped-green text-center"
+                                ${isComingSoon ? 'disabled aria-disabled="true"' : `aria-label="Download ${file.title} PDF"`}
+                            >
+                                ${isComingSoon ? 'Unavailable' : 'Download PDF'}
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // --- Modals & Toasts ---
+        const modal = document.getElementById('download-modal');
+        const modalContent = document.getElementById('modal-content');
+
+        function initiateDownload(id, title) {
+            currentFileToDownload = { id, title };
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; 
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+            document.getElementById('confirm-download-btn').focus();
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                currentFileToDownload = null;
+            }, 300);
+        }
+
+        // --- REAL FILE DOWNLOAD LOGIC ---
+        document.getElementById('confirm-download-btn').addEventListener('click', () => {
+            if (currentFileToDownload) {
+                const { id, title } = currentFileToDownload;
+                let currentCount = getDownloadCount(id);
+                setDownloadCount(id, currentCount + 1);
+                
+                closeModal();
+                showToast(`Success! Your file is ready. Automated fields & tracking code embedded.`, 'success');
+                
+                const realPdfPath = pdfFilePaths[id];
+                if (realPdfPath) {
+                    setTimeout(() => {
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = realPdfPath;
+                        a.download = realPdfPath.split('/').pop(); 
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    }, 800);
+                } else {
+                    showToast('File path not found. Check your resources folder.', 'error');
+                }
+            }
+        });
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-sped-green' : 'bg-sped-dark';
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-hard flex items-center gap-3 toast-enter pointer-events-auto font-sans text-sm max-w-sm`;
+            toast.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(100%)';
+                toast.style.transition = 'all 0.4s ease-in';
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        // --- Accessibility Features (SPED Friendly) ---
+        let ttsActive = false;
+        let speechSynth = window.speechSynthesis;
+        let utterance = new SpeechSynthesisUtterance();
+
+        function playCardAudio(title, desc) {
+            if (speechSynth) speechSynth.cancel();
+            const textToRead = `${title}. ${desc}`;
+            let cardUtterance = new SpeechSynthesisUtterance(textToRead);
+            cardUtterance.rate = 0.9;
+            speechSynth.speak(cardUtterance);
+        }
+
+        // --- REAL PDF PREVIEW LOGIC ---
+        const previewModal = document.getElementById('preview-modal');
+        const previewContent = document.getElementById('preview-content');
+        const previewIframe = document.getElementById('pdf-preview-frame');
+        
+        function openPreview(id, title) {
+            document.getElementById('preview-title').textContent = `Preview: ${title}`;
+            
+            const realPdfPath = pdfFilePaths[id];
+            if (realPdfPath) {
+                // By appending '#toolbar=0' we try to hide the default browser PDF download buttons in the preview
+                previewIframe.src = realPdfPath + '#toolbar=0';
+            } else {
+                previewIframe.src = 'about:blank';
+            }
+
+            previewModal.classList.remove('hidden');
+            void previewModal.offsetWidth; 
+            previewModal.classList.remove('opacity-0');
+            previewContent.classList.remove('scale-95');
+        }
+
+        function closePreview() {
+            previewModal.classList.add('opacity-0');
+            previewContent.classList.add('scale-95');
+            setTimeout(() => {
+                previewModal.classList.add('hidden');
+                previewIframe.src = ''; 
+            }, 300);
+        }
+
+        let magnifierActive = false;
+        
+        function toggleMagnifier() {
+            const btn = document.getElementById('btn-magnifier');
+            magnifierActive = !magnifierActive;
+            
+            if (magnifierActive) {
+                btn.classList.add('bg-sped-green', 'text-white');
+                let wrapper = document.getElementById('magnifier-wrapper');
+                if (!wrapper) {
+                    wrapper = document.createElement('div');
+                    wrapper.id = 'magnifier-wrapper';
+                    wrapper.style.transition = 'transform 0.1s ease-out';
+                    
+                    const header = document.querySelector('header');
+                    const main = document.querySelector('main');
+                    const footer = document.querySelector('footer');
+                    
+                    document.body.insertBefore(wrapper, document.body.firstChild);
+                    wrapper.appendChild(header);
+                    wrapper.appendChild(main);
+                    wrapper.appendChild(footer);
+                }
+                
+                document.body.style.overflow = 'hidden';
+                document.addEventListener('mousemove', panMagnifier);
+                showToast('Magnifier Enabled. Move your mouse to explore the page.');
+                wrapper.style.transform = 'scale(1.5)';
+            } else {
+                btn.classList.remove('bg-sped-green', 'text-white');
+                const wrapper = document.getElementById('magnifier-wrapper');
+                if (wrapper) wrapper.style.transform = 'none';
+                
+                document.body.style.overflow = '';
+                document.removeEventListener('mousemove', panMagnifier);
+                showToast('Magnifier Disabled.');
+            }
+        }
+
+        function panMagnifier(e) {
+            const wrapper = document.getElementById('magnifier-wrapper');
+            if (!wrapper || !magnifierActive) return;
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+            wrapper.style.transformOrigin = `${x}% ${y}%`;
+        }
+
+        function toggleTTS() {
+            const btn = document.getElementById('btn-tts');
+            if (ttsActive) {
+                speechSynth.cancel();
+                ttsActive = false;
+                btn.classList.remove('bg-sped-orange', 'text-white');
+                showToast('Text-to-Speech Disabled');
+            } else {
+                ttsActive = true;
+                btn.classList.add('bg-sped-orange', 'text-white');
+                showToast('Text-to-Speech Enabled. Reading page content...');
+                
+                const textToRead = `Jasmine M. Portfolio. Empowering Every Learner, Every Day. Welcome to my professional portfolio. I develop highly structured, evidence-based Special Education resources designed with accessibility at the forefront. Scroll down to view available resources like IEP Templates and Behavior Contracts.`;
+                
+                utterance.text = textToRead;
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                utterance.onend = () => {
+                    ttsActive = false;
+                    btn.classList.remove('bg-sped-orange', 'text-white');
+                };
+                speechSynth.speak(utterance);
+            }
+        }
+
+        window.onbeforeunload = () => {
+            if(speechSynth) speechSynth.cancel();
+        };
+
+        function toggleContrast() {
+            document.body.classList.toggle('high-contrast');
+            const btn = document.getElementById('btn-contrast');
+            if (document.body.classList.contains('high-contrast')) {
+                btn.classList.add('bg-black', 'text-yellow-300', 'border-2', 'border-yellow-300');
+                localStorage.setItem('a11y-contrast', 'true');
+            } else {
+                btn.classList.remove('bg-black', 'text-yellow-300', 'border-2', 'border-yellow-300');
+                localStorage.setItem('a11y-contrast', 'false');
+            }
+        }
+
+        function toggleTextSize() {
+            document.body.classList.toggle('large-text');
+            const btn = document.getElementById('btn-textsize');
+            if (document.body.classList.contains('large-text')) {
+                btn.classList.add('bg-sped-green', 'text-white');
+                localStorage.setItem('a11y-text', 'true');
+            } else {
+                btn.classList.remove('bg-sped-green', 'text-white');
+                localStorage.setItem('a11y-text', 'false');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('a11y-contrast') === 'true') {
+                toggleContrast();
+            }
+            if (localStorage.getItem('a11y-text') === 'true') {
+                toggleTextSize();
+            }
+
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            
+            if(mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => {
+                    const isExpanded = mobileBtn.getAttribute('aria-expanded') === 'true';
+                    mobileBtn.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+                
+                mobileLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        mobileMenu.classList.add('hidden');
+                        mobileBtn.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>

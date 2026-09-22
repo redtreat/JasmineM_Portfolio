@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inclusive AAC Communicator - Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
+            overscroll-behavior-y: none;
+            touch-action: pan-y; /* Prevent zooming, allow safe scrolling */
+        }
+        
+        /* High-contrast focus rings for Keyboard & NVDA navigation */
+        button:focus-visible {
+            outline: 4px solid #2563eb;
+            outline-offset: 4px;
+            z-index: 10;
+        }
+
+        .aac-btn {
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .aac-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Fitzgerald Key Color Coding */
+        .color-pronoun { background-color: #fef08a; border-bottom: 4px solid #eab308; color: #422006; } /* Yellow */
+        .color-verb { background-color: #bbf7d0; border-bottom: 4px solid #22c55e; color: #064e3b; } /* Green */
+        .color-noun { background-color: #fdba74; border-bottom: 4px solid #f97316; color: #431407; } /* Orange */
+        .color-social { background-color: #fbcfe8; border-bottom: 4px solid #ec4899; color: #500724; } /* Pink */
+        .color-adj { background-color: #bfdbfe; border-bottom: 4px solid #3b82f6; color: #1e3a8a; } /* Blue */
+        .color-prep { background-color: #d8b4fe; border-bottom: 4px solid #a855f7; color: #3b0764; } /* Purple */
+        .color-question { background-color: #f3f4f6; border-bottom: 4px solid #9ca3af; color: #1f2937; } /* Gray */
+        
+        /* Folder Styling to visually distinguish categories from words */
+        .color-folder { 
+            background-color: #e5e7eb; 
+            border-bottom: 4px solid #9ca3af; 
+            border-top: 4px solid #d1d5db;
+            color: #1f2937; 
+        }
+
+        /* Hide scrollbar for a cleaner interface but allow scrolling */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden text-gray-900">
+
+    <div id="a11y-announcer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+    <header class="bg-white shadow-md p-2 md:p-4 z-10 flex-shrink-0 border-b-4 border-blue-500">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="sr-only">AAC Communication Board</h1>
+            
+            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-4 bg-gray-50 rounded-xl p-2 min-h-[100px] border-2 border-gray-200">
+                
+                <!-- Sentence Display Strip -->
+                <div id="sentence-strip" class="flex-grow flex flex-wrap gap-2 overflow-y-auto max-h-[120px] p-2 items-center bg-white rounded-lg border border-gray-100 min-h-[80px]" aria-label="Current sentence being built">
+                    <span id="empty-state" class="text-gray-400 font-semibold text-lg md:text-xl w-full text-center">Select pictures to build a sentence...</span>
+                </div>
+                
+                <!-- Action Controls -->
+                <div class="flex grid grid-cols-3 md:flex md:flex-row gap-2 flex-shrink-0">
+                    <button id="btn-backspace" onclick="removeLastWord()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg shadow-sm transition-colors text-sm md:text-base flex flex-col items-center justify-center gap-1" aria-label="Delete last word">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" /></svg>
+                        <span>Undo</span>
+                    </button>
+                    <button id="btn-clear" onclick="clearSentence()" class="bg-red-100 hover:bg-red-200 text-red-700 border-2 border-red-300 font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base flex flex-col items-center justify-center gap-1" aria-label="Clear entire sentence">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <span>Clear</span>
+                    </button>
+                    <button id="btn-speak-sentence" onclick="speakSentence()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-colors text-sm md:text-base flex flex-col items-center justify-center gap-1 col-span-3 md:col-span-1" aria-label="Speak entire sentence">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2.586l3.707 3.707a1 1 0 001.707-.707V4.992a1 1 0 00-1.707-.707L9.586 8H7a2 2 0 00-2 2z" /></svg>
+                        <span>Speak</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Navigation Breadcrumb Area -->
+            <div id="navigation-bar" class="mt-3 flex items-center justify-between hidden">
+                <button id="btn-home" onclick="goHome()" class="bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors focus:outline-none" aria-label="Go back to Home Categories">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                    Back to Home
+                </button>
+                <h2 id="current-category-title" class="font-bold text-gray-600 text-lg uppercase tracking-wide">Category</h2>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow overflow-y-auto p-2 md:p-4 bg-gray-50 pb-20" aria-label="Vocabulary Grid">
+        <div class="max-w-7xl mx-auto">
+            <!-- Grid adapts to mobile (3 cols), tablet (5 cols), desktop (7 cols) -->
+            <div id="vocabulary-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 md:gap-3">
+                <!-- Javascript will inject buttons here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        
+        // 1. Define the Categories (Folders)
+        const categories = [
+            { id: 'cat_core', word: 'Core Words', type: 'color-folder', file: 'images/cat_core.png', fallback: '⭐' },
+            { id: 'cat_people', word: 'People', type: 'color-folder', file: 'images/cat_people.png', fallback: '👥' },
+            { id: 'cat_actions', word: 'Actions', type: 'color-folder', file: 'images/cat_actions.png', fallback: '🏃' },
+            { id: 'cat_needs', word: 'Needs & Wants', type: 'color-folder', file: 'images/cat_needs.png', fallback: '🤲' },
+            { id: 'cat_feelings', word: 'Feelings', type: 'color-folder', file: 'images/cat_feelings.png', fallback: '😊' },
+            { id: 'cat_social', word: 'Social Words', type: 'color-folder', file: 'images/cat_social.png', fallback: '💬' },
+            { id: 'cat_describing', word: 'Describing', type: 'color-folder', file: 'images/cat_describing.png', fallback: '🎨' },
+            { id: 'cat_objects', word: 'Objects', type: 'color-folder', file: 'images/cat_objects.png', fallback: '🧸' },
+            { id: 'cat_places', word: 'Places', type: 'color-folder', file: 'images/cat_places.png', fallback: '🏠' },
+            { id: 'cat_food', word: 'Food & Drinks', type: 'color-folder', file: 'images/cat_food.png', fallback: '🍔' },
+            { id: 'cat_body', word: 'Body & Health', type: 'color-folder', file: 'images/cat_body.png', fallback: '🩺' },
+            { id: 'cat_school', word: 'School', type: 'color-folder', file: 'images/cat_school.png', fallback: '🏫' },
+            { id: 'cat_sensory', word: 'Sensory', type: 'color-folder', file: 'images/cat_sensory.png', fallback: '🎧' },
+            { id: 'cat_time', word: 'Time', type: 'color-folder', file: 'images/cat_time.png', fallback: '⏰' },
+            { id: 'cat_location', word: 'Location', type: 'color-folder', file: 'images/cat_location.png', fallback: '📍' },
+            { id: 'cat_questions', word: 'Questions', type: 'color-folder', file: 'images/cat_questions.png', fallback: '❓' },
+            { id: 'cat_grammar', word: 'Grammar', type: 'color-folder', file: 'images/cat_grammar.png', fallback: '🔤' },
+            { id: 'cat_choices', word: 'Choices', type: 'color-folder', file: 'images/cat_choices.png', fallback: '🔀' },
+            { id: 'cat_safety', word: 'Safety', type: 'color-folder', file: 'images/cat_safety.png', fallback: '⚠️' },
+            { id: 'cat_personal', word: 'Personal Info', type: 'color-folder', file: 'images/cat_personal.png', fallback: '🆔' }
+        ];
+
+        // 2. Define the Vocabulary (Words)
+        const vocabulary = [
+            // --- ABSOLUTE CORE (Shown on Home for immediate access without navigating) ---
+            { id: 'home_i', word: 'I', type: 'color-pronoun', file: 'images/word_i.png', fallback: '🙋', category: 'home' },
+            { id: 'home_want', word: 'Want', type: 'color-verb', file: 'images/word_want.png', fallback: '🤲', category: 'home' },
+            { id: 'home_help', word: 'Help', type: 'color-social', file: 'images/word_help.png', fallback: '🤝', category: 'home' },
+            { id: 'home_stop', word: 'Stop', type: 'color-social', file: 'images/word_stop.png', fallback: '🛑', category: 'home' },
+            { id: 'home_yes', word: 'Yes', type: 'color-social', file: 'images/word_yes.png', fallback: '✅', category: 'home' },
+            { id: 'home_no', word: 'No', type: 'color-social', file: 'images/word_no.png', fallback: '❌', category: 'home' },
+
+            // --- 1. CORE WORDS ---
+            { id: 'core_i', word: 'I', type: 'color-pronoun', file: 'images/word_i.png', fallback: '🙋', category: 'cat_core' },
+            { id: 'core_you', word: 'You', type: 'color-pronoun', file: 'images/word_you.png', fallback: '👉', category: 'cat_core' },
+            { id: 'core_want', word: 'Want', type: 'color-verb', file: 'images/word_want.png', fallback: '🤲', category: 'cat_core' },
+            { id: 'core_more', word: 'More', type: 'color-adj', file: 'images/word_more.png', fallback: '➕', category: 'cat_core' },
+            { id: 'core_not', word: 'Not', type: 'color-social', file: 'images/word_not.png', fallback: '🚫', category: 'cat_core' },
+            { id: 'core_go', word: 'Go', type: 'color-verb', file: 'images/word_go.png', fallback: '🚦', category: 'cat_core' },
+            { id: 'core_stop', word: 'Stop', type: 'color-social', file: 'images/word_stop.png', fallback: '🛑', category: 'cat_core' },
+            { id: 'core_help', word: 'Help', type: 'color-social', file: 'images/word_help.png', fallback: '🤝', category: 'cat_core' },
+            { id: 'core_like', word: 'Like', type: 'color-verb', file: 'images/word_like.png', fallback: '👍', category: 'cat_core' },
+            { id: 'core_have', word: 'Have', type: 'color-verb', file: 'images/word_have.png', fallback: '👐', category: 'cat_core' },
+            { id: 'core_do', word: 'Do', type: 'color-verb', file: 'images/word_do.png', fallback: '✔️', category: 'cat_core' },
+            { id: 'core_make', word: 'Make', type: 'color-verb', file: 'images/word_make.png', fallback: '🛠️', category: 'cat_core' },
+            { id: 'core_get', word: 'Get', type: 'color-verb', file: 'images/word_get.png', fallback: '✊', category: 'cat_core' },
+
+            // --- 2. PEOPLE ---
+            { id: 'ppl_i', word: 'I', type: 'color-pronoun', file: 'images/word_i.png', fallback: '🙋', category: 'cat_people' },
+            { id: 'ppl_you', word: 'You', type: 'color-pronoun', file: 'images/word_you.png', fallback: '👉', category: 'cat_people' },
+            { id: 'ppl_he', word: 'He', type: 'color-pronoun', file: 'images/word_he.png', fallback: '👦', category: 'cat_people' },
+            { id: 'ppl_she', word: 'She', type: 'color-pronoun', file: 'images/word_she.png', fallback: '👧', category: 'cat_people' },
+            { id: 'ppl_we', word: 'We', type: 'color-pronoun', file: 'images/word_we.png', fallback: '🧑‍🤝‍🧑', category: 'cat_people' },
+            { id: 'ppl_they', word: 'They', type: 'color-pronoun', file: 'images/word_they.png', fallback: '👨‍👩‍👧‍👦', category: 'cat_people' },
+            { id: 'ppl_mom', word: 'Mom', type: 'color-noun', file: 'images/word_mom.png', fallback: '👩', category: 'cat_people' },
+            { id: 'ppl_dad', word: 'Dad', type: 'color-noun', file: 'images/word_dad.png', fallback: '👨', category: 'cat_people' },
+            { id: 'ppl_teacher', word: 'Teacher', type: 'color-noun', file: 'images/word_teacher.png', fallback: '🧑‍🏫', category: 'cat_people' },
+            { id: 'ppl_friend', word: 'Friend', type: 'color-noun', file: 'images/word_friend.png', fallback: '🫂', category: 'cat_people' },
+
+            // --- 3. ACTIONS / VERBS ---
+            { id: 'act_go', word: 'Go', type: 'color-verb', file: 'images/word_go.png', fallback: '🚦', category: 'cat_actions' },
+            { id: 'act_eat', word: 'Eat', type: 'color-verb', file: 'images/word_eat.png', fallback: '🍽️', category: 'cat_actions' },
+            { id: 'act_drink', word: 'Drink', type: 'color-verb', file: 'images/word_drink.png', fallback: '🥤', category: 'cat_actions' },
+            { id: 'act_play', word: 'Play', type: 'color-verb', file: 'images/word_play.png', fallback: '🎲', category: 'cat_actions' },
+            { id: 'act_open', word: 'Open', type: 'color-verb', file: 'images/word_open.png', fallback: '🔓', category: 'cat_actions' },
+            { id: 'act_close', word: 'Close', type: 'color-verb', file: 'images/word_close.png', fallback: '🔒', category: 'cat_actions' },
+            { id: 'act_give', word: 'Give', type: 'color-verb', file: 'images/word_give.png', fallback: '🎁', category: 'cat_actions' },
+            { id: 'act_take', word: 'Take', type: 'color-verb', file: 'images/word_take.png', fallback: '📥', category: 'cat_actions' },
+            { id: 'act_look', word: 'Look', type: 'color-verb', file: 'images/word_look.png', fallback: '👀', category: 'cat_actions' },
+            { id: 'act_see', word: 'See', type: 'color-verb', file: 'images/word_see.png', fallback: '👁️', category: 'cat_actions' },
+            { id: 'act_come', word: 'Come', type: 'color-verb', file: 'images/word_come.png', fallback: '🚶', category: 'cat_actions' },
+            { id: 'act_wait', word: 'Wait', type: 'color-verb', file: 'images/word_wait.png', fallback: '⏳', category: 'cat_actions' },
+
+            // --- 4. NEEDS & WANTS ---
+            { id: 'need_want', word: 'Want', type: 'color-verb', file: 'images/word_want.png', fallback: '🤲', category: 'cat_needs' },
+            { id: 'need_need', word: 'Need', type: 'color-verb', file: 'images/word_need.png', fallback: '❗', category: 'cat_needs' },
+            { id: 'need_more', word: 'More', type: 'color-adj', file: 'images/word_more.png', fallback: '➕', category: 'cat_needs' },
+            { id: 'need_finished', word: 'Finished', type: 'color-adj', file: 'images/word_finished.png', fallback: '🏁', category: 'cat_needs' },
+            { id: 'need_help', word: 'Help', type: 'color-social', file: 'images/word_help.png', fallback: '🤝', category: 'cat_needs' },
+            { id: 'need_bathroom', word: 'Bathroom', type: 'color-noun', file: 'images/word_bathroom.png', fallback: '🚽', category: 'cat_needs' },
+            { id: 'need_hungry', word: 'Hungry', type: 'color-adj', file: 'images/word_hungry.png', fallback: '😋', category: 'cat_needs' },
+            { id: 'need_thirsty', word: 'Thirsty', type: 'color-adj', file: 'images/word_thirsty.png', fallback: '🥵', category: 'cat_needs' },
+            { id: 'need_tired', word: 'Tired', type: 'color-adj', file: 'images/word_tired.png', fallback: '🥱', category: 'cat_needs' },
+
+            // --- 5. FEELINGS ---
+            { id: 'feel_happy', word: 'Happy', type: 'color-adj', file: 'images/word_happy.png', fallback: '😁', category: 'cat_feelings' },
+            { id: 'feel_sad', word: 'Sad', type: 'color-adj', file: 'images/word_sad.png', fallback: '😢', category: 'cat_feelings' },
+            { id: 'feel_angry', word: 'Angry', type: 'color-adj', file: 'images/word_angry.png', fallback: '😠', category: 'cat_feelings' },
+            { id: 'feel_scared', word: 'Scared', type: 'color-adj', file: 'images/word_scared.png', fallback: '😨', category: 'cat_feelings' },
+            { id: 'feel_excited', word: 'Excited', type: 'color-adj', file: 'images/word_excited.png', fallback: '🤩', category: 'cat_feelings' },
+            { id: 'feel_tired', word: 'Tired', type: 'color-adj', file: 'images/word_tired.png', fallback: '🥱', category: 'cat_feelings' },
+            { id: 'feel_worried', word: 'Worried', type: 'color-adj', file: 'images/word_worried.png', fallback: '😟', category: 'cat_feelings' },
+            { id: 'feel_okay', word: 'Okay', type: 'color-adj', file: 'images/word_okay.png', fallback: '👍', category: 'cat_feelings' },
+            { id: 'feel_sick', word: 'Sick', type: 'color-adj', file: 'images/word_sick.png', fallback: '🤢', category: 'cat_feelings' },
+
+            // --- 6. SOCIAL WORDS ---
+            { id: 'soc_hello', word: 'Hello', type: 'color-social', file: 'images/word_hello.png', fallback: '👋', category: 'cat_social' },
+            { id: 'soc_goodbye', word: 'Goodbye', type: 'color-social', file: 'images/word_goodbye.png', fallback: '🚶', category: 'cat_social' },
+            { id: 'soc_please', word: 'Please', type: 'color-social', file: 'images/word_please.png', fallback: '🙏', category: 'cat_social' },
+            { id: 'soc_thankyou', word: 'Thank You', type: 'color-social', file: 'images/word_thankyou.png', fallback: '💖', category: 'cat_social' },
+            { id: 'soc_sorry', word: 'Sorry', type: 'color-social', file: 'images/word_sorry.png', fallback: '😔', category: 'cat_social' },
+            { id: 'soc_yes', word: 'Yes', type: 'color-social', file: 'images/word_yes.png', fallback: '✅', category: 'cat_social' },
+            { id: 'soc_no', word: 'No', type: 'color-social', file: 'images/word_no.png', fallback: '❌', category: 'cat_social' },
+            { id: 'soc_excuseme', word: 'Excuse Me', type: 'color-social', file: 'images/word_excuseme.png', fallback: '🙋', category: 'cat_social' },
+
+            // --- 7. DESCRIBING WORDS ---
+            { id: 'desc_big', word: 'Big', type: 'color-adj', file: 'images/word_big.png', fallback: '🐘', category: 'cat_describing' },
+            { id: 'desc_small', word: 'Small', type: 'color-adj', file: 'images/word_small.png', fallback: '🐜', category: 'cat_describing' },
+            { id: 'desc_hot', word: 'Hot', type: 'color-adj', file: 'images/word_hot.png', fallback: '🔥', category: 'cat_describing' },
+            { id: 'desc_cold', word: 'Cold', type: 'color-adj', file: 'images/word_cold.png', fallback: '❄️', category: 'cat_describing' },
+            { id: 'desc_good', word: 'Good', type: 'color-adj', file: 'images/word_good.png', fallback: '👍', category: 'cat_describing' },
+            { id: 'desc_bad', word: 'Bad', type: 'color-adj', file: 'images/word_bad.png', fallback: '👎', category: 'cat_describing' },
+            { id: 'desc_fast', word: 'Fast', type: 'color-adj', file: 'images/word_fast.png', fallback: '🐇', category: 'cat_describing' },
+            { id: 'desc_slow', word: 'Slow', type: 'color-adj', file: 'images/word_slow.png', fallback: '🐢', category: 'cat_describing' },
+            { id: 'desc_same', word: 'Same', type: 'color-adj', file: 'images/word_same.png', fallback: '🟰', category: 'cat_describing' },
+            { id: 'desc_different', word: 'Different', type: 'color-adj', file: 'images/word_different.png', fallback: '≠', category: 'cat_describing' },
+
+            // --- 8. OBJECTS / NOUNS ---
+            { id: 'obj_food', word: 'Food', type: 'color-noun', file: 'images/word_food.png', fallback: '🍱', category: 'cat_objects' },
+            { id: 'obj_water', word: 'Water', type: 'color-noun', file: 'images/word_water.png', fallback: '💧', category: 'cat_objects' },
+            { id: 'obj_toy', word: 'Toy', type: 'color-noun', file: 'images/word_toy.png', fallback: '🧸', category: 'cat_objects' },
+            { id: 'obj_book', word: 'Book', type: 'color-noun', file: 'images/word_book.png', fallback: '📖', category: 'cat_objects' },
+            { id: 'obj_phone', word: 'Phone', type: 'color-noun', file: 'images/word_phone.png', fallback: '📱', category: 'cat_objects' },
+            { id: 'obj_bag', word: 'Bag', type: 'color-noun', file: 'images/word_bag.png', fallback: '🎒', category: 'cat_objects' },
+            { id: 'obj_pencil', word: 'Pencil', type: 'color-noun', file: 'images/word_pencil.png', fallback: '✏️', category: 'cat_objects' },
+            { id: 'obj_chair', word: 'Chair', type: 'color-noun', file: 'images/word_chair.png', fallback: '🪑', category: 'cat_objects' },
+            { id: 'obj_clothes', word: 'Clothes', type: 'color-noun', file: 'images/word_clothes.png', fallback: '👕', category: 'cat_objects' },
+
+            // --- 9. PLACES ---
+            { id: 'plc_home', word: 'Home', type: 'color-noun', file: 'images/word_home.png', fallback: '🏡', category: 'cat_places' },
+            { id: 'plc_school', word: 'School', type: 'color-noun', file: 'images/word_school.png', fallback: '🏫', category: 'cat_places' },
+            { id: 'plc_classroom', word: 'Classroom', type: 'color-noun', file: 'images/word_classroom.png', fallback: '🧑‍🏫', category: 'cat_places' },
+            { id: 'plc_bathroom', word: 'Bathroom', type: 'color-noun', file: 'images/word_bathroom.png', fallback: '🚽', category: 'cat_places' },
+            { id: 'plc_playground', word: 'Playground', type: 'color-noun', file: 'images/word_playground.png', fallback: '🛝', category: 'cat_places' },
+            { id: 'plc_store', word: 'Store', type: 'color-noun', file: 'images/word_store.png', fallback: '🏪', category: 'cat_places' },
+            { id: 'plc_hospital', word: 'Hospital', type: 'color-noun', file: 'images/word_hospital.png', fallback: '🏥', category: 'cat_places' },
+
+            // --- 10. FOOD & DRINKS ---
+            { id: 'food_water', word: 'Water', type: 'color-noun', file: 'images/word_water.png', fallback: '💧', category: 'cat_food' },
+            { id: 'food_milk', word: 'Milk', type: 'color-noun', file: 'images/word_milk.png', fallback: '🥛', category: 'cat_food' },
+            { id: 'food_juice', word: 'Juice', type: 'color-noun', file: 'images/word_juice.png', fallback: '🧃', category: 'cat_food' },
+            { id: 'food_rice', word: 'Rice', type: 'color-noun', file: 'images/word_rice.png', fallback: '🍚', category: 'cat_food' },
+            { id: 'food_bread', word: 'Bread', type: 'color-noun', file: 'images/word_bread.png', fallback: '🍞', category: 'cat_food' },
+            { id: 'food_banana', word: 'Banana', type: 'color-noun', file: 'images/word_banana.png', fallback: '🍌', category: 'cat_food' },
+            { id: 'food_apple', word: 'Apple', type: 'color-noun', file: 'images/word_apple.png', fallback: '🍎', category: 'cat_food' },
+            { id: 'food_chicken', word: 'Chicken', type: 'color-noun', file: 'images/word_chicken.png', fallback: '🍗', category: 'cat_food' },
+            { id: 'food_fish', word: 'Fish', type: 'color-noun', file: 'images/word_fish.png', fallback: '🐟', category: 'cat_food' },
+
+            // --- 11. BODY & HEALTH ---
+            { id: 'body_head', word: 'Head', type: 'color-noun', file: 'images/word_head.png', fallback: '👤', category: 'cat_body' },
+            { id: 'body_hand', word: 'Hand', type: 'color-noun', file: 'images/word_hand.png', fallback: '🖐️', category: 'cat_body' },
+            { id: 'body_eye', word: 'Eye', type: 'color-noun', file: 'images/word_eye.png', fallback: '👁️', category: 'cat_body' },
+            { id: 'body_mouth', word: 'Mouth', type: 'color-noun', file: 'images/word_mouth.png', fallback: '👄', category: 'cat_body' },
+            { id: 'body_stomach', word: 'Stomach', type: 'color-noun', file: 'images/word_stomach.png', fallback: '🤰', category: 'cat_body' },
+            { id: 'body_pain', word: 'Pain', type: 'color-adj', file: 'images/word_pain.png', fallback: '⚡', category: 'cat_body' },
+            { id: 'body_medicine', word: 'Medicine', type: 'color-noun', file: 'images/word_medicine.png', fallback: '💊', category: 'cat_body' },
+            { id: 'body_doctor', word: 'Doctor', type: 'color-noun', file: 'images/word_doctor.png', fallback: '🩺', category: 'cat_body' },
+
+            // --- 12. CLASSROOM / SCHOOL ---
+            { id: 'edu_teacher', word: 'Teacher', type: 'color-noun', file: 'images/word_teacher.png', fallback: '🧑‍🏫', category: 'cat_school' },
+            { id: 'edu_student', word: 'Student', type: 'color-noun', file: 'images/word_student.png', fallback: '🧑‍🎓', category: 'cat_school' },
+            { id: 'edu_book', word: 'Book', type: 'color-noun', file: 'images/word_book.png', fallback: '📚', category: 'cat_school' },
+            { id: 'edu_pencil', word: 'Pencil', type: 'color-noun', file: 'images/word_pencil.png', fallback: '✏️', category: 'cat_school' },
+            { id: 'edu_paper', word: 'Paper', type: 'color-noun', file: 'images/word_paper.png', fallback: '📄', category: 'cat_school' },
+            { id: 'edu_read', word: 'Read', type: 'color-verb', file: 'images/word_read.png', fallback: '📖', category: 'cat_school' },
+            { id: 'edu_write', word: 'Write', type: 'color-verb', file: 'images/word_write.png', fallback: '✍️', category: 'cat_school' },
+            { id: 'edu_answer', word: 'Answer', type: 'color-verb', file: 'images/word_answer.png', fallback: '💡', category: 'cat_school' },
+            { id: 'edu_question', word: 'Question', type: 'color-noun', file: 'images/word_question.png', fallback: '❓', category: 'cat_school' },
+
+            // --- 13. SENSORY / REGULATION ---
+            { id: 'sens_quiet', word: 'Quiet', type: 'color-adj', file: 'images/word_quiet.png', fallback: '🤫', category: 'cat_sensory' },
+            { id: 'sens_loud', word: 'Loud', type: 'color-adj', file: 'images/word_loud.png', fallback: '🔊', category: 'cat_sensory' },
+            { id: 'sens_break', word: 'Break', type: 'color-verb', file: 'images/word_break.png', fallback: '⏸️', category: 'cat_sensory' },
+            { id: 'sens_music', word: 'Music', type: 'color-noun', file: 'images/word_music.png', fallback: '🎵', category: 'cat_sensory' },
+            { id: 'sens_light', word: 'Light', type: 'color-noun', file: 'images/word_light.png', fallback: '💡', category: 'cat_sensory' },
+            { id: 'sens_dark', word: 'Dark', type: 'color-noun', file: 'images/word_dark.png', fallback: '🌌', category: 'cat_sensory' },
+            { id: 'sens_touch', word: 'Touch', type: 'color-verb', file: 'images/word_touch.png', fallback: '👆', category: 'cat_sensory' },
+            { id: 'sens_space', word: 'Space', type: 'color-noun', file: 'images/word_space.png', fallback: '↔️', category: 'cat_sensory' },
+            { id: 'sens_calm', word: 'Calm', type: 'color-adj', file: 'images/word_calm.png', fallback: '🧘', category: 'cat_sensory' },
+
+            // --- 14. TIME ---
+            { id: 'time_now', word: 'Now', type: 'color-prep', file: 'images/word_now.png', fallback: '👇', category: 'cat_time' },
+            { id: 'time_later', word: 'Later', type: 'color-prep', file: 'images/word_later.png', fallback: '⏭️', category: 'cat_time' },
+            { id: 'time_today', word: 'Today', type: 'color-prep', file: 'images/word_today.png', fallback: '📅', category: 'cat_time' },
+            { id: 'time_tomorrow', word: 'Tomorrow', type: 'color-prep', file: 'images/word_tomorrow.png', fallback: '🔜', category: 'cat_time' },
+            { id: 'time_yesterday', word: 'Yesterday', type: 'color-prep', file: 'images/word_yesterday.png', fallback: '🔙', category: 'cat_time' },
+            { id: 'time_morning', word: 'Morning', type: 'color-prep', file: 'images/word_morning.png', fallback: '🌅', category: 'cat_time' },
+            { id: 'time_afternoon', word: 'Afternoon', type: 'color-prep', file: 'images/word_afternoon.png', fallback: '☀️', category: 'cat_time' },
+            { id: 'time_night', word: 'Night', type: 'color-prep', file: 'images/word_night.png', fallback: '🌙', category: 'cat_time' },
+
+            // --- 15. LOCATION / POSITION ---
+            { id: 'loc_here', word: 'Here', type: 'color-prep', file: 'images/word_here.png', fallback: '📍', category: 'cat_location' },
+            { id: 'loc_there', word: 'There', type: 'color-prep', file: 'images/word_there.png', fallback: '👉', category: 'cat_location' },
+            { id: 'loc_inside', word: 'Inside', type: 'color-prep', file: 'images/word_inside.png', fallback: '📥', category: 'cat_location' },
+            { id: 'loc_outside', word: 'Outside', type: 'color-prep', file: 'images/word_outside.png', fallback: '🌳', category: 'cat_location' },
+            { id: 'loc_up', word: 'Up', type: 'color-prep', file: 'images/word_up.png', fallback: '⬆️', category: 'cat_location' },
+            { id: 'loc_down', word: 'Down', type: 'color-prep', file: 'images/word_down.png', fallback: '⬇️', category: 'cat_location' },
+            { id: 'loc_in', word: 'In', type: 'color-prep', file: 'images/word_in.png', fallback: '📩', category: 'cat_location' },
+            { id: 'loc_out', word: 'Out', type: 'color-prep', file: 'images/word_out.png', fallback: '📤', category: 'cat_location' },
+            { id: 'loc_near', word: 'Near', type: 'color-prep', file: 'images/word_near.png', fallback: '🔍', category: 'cat_location' },
+            { id: 'loc_far', word: 'Far', type: 'color-prep', file: 'images/word_far.png', fallback: '🔭', category: 'cat_location' },
+
+            // --- 16. QUESTIONS ---
+            { id: 'q_what', word: 'What', type: 'color-question', file: 'images/word_what.png', fallback: '🤷', category: 'cat_questions' },
+            { id: 'q_who', word: 'Who', type: 'color-question', file: 'images/word_who.png', fallback: '👤', category: 'cat_questions' },
+            { id: 'q_where', word: 'Where', type: 'color-question', file: 'images/word_where.png', fallback: '🗺️', category: 'cat_questions' },
+            { id: 'q_when', word: 'When', type: 'color-question', file: 'images/word_when.png', fallback: '⏰', category: 'cat_questions' },
+            { id: 'q_why', word: 'Why', type: 'color-question', file: 'images/word_why.png', fallback: '🤔', category: 'cat_questions' },
+            { id: 'q_how', word: 'How', type: 'color-question', file: 'images/word_how.png', fallback: '🔧', category: 'cat_questions' },
+
+            // --- 17. GRAMMAR / FUNCTION WORDS ---
+            { id: 'gram_is', word: 'Is', type: 'color-verb', file: 'images/word_is.png', fallback: '🔗', category: 'cat_grammar' },
+            { id: 'gram_are', word: 'Are', type: 'color-verb', file: 'images/word_are.png', fallback: '🔗', category: 'cat_grammar' },
+            { id: 'gram_was', word: 'Was', type: 'color-verb', file: 'images/word_was.png', fallback: '⏪', category: 'cat_grammar' },
+            { id: 'gram_can', word: 'Can', type: 'color-verb', file: 'images/word_can.png', fallback: '👍', category: 'cat_grammar' },
+            { id: 'gram_will', word: 'Will', type: 'color-verb', file: 'images/word_will.png', fallback: '🔮', category: 'cat_grammar' },
+            { id: 'gram_not', word: 'Not', type: 'color-social', file: 'images/word_not.png', fallback: '🚫', category: 'cat_grammar' },
+            { id: 'gram_and', word: 'And', type: 'color-prep', file: 'images/word_and.png', fallback: '➕', category: 'cat_grammar' },
+            { id: 'gram_but', word: 'But', type: 'color-prep', file: 'images/word_but.png', fallback: '🤚', category: 'cat_grammar' },
+            { id: 'gram_because', word: 'Because', type: 'color-prep', file: 'images/word_because.png', fallback: '➡️', category: 'cat_grammar' },
+            { id: 'gram_to', word: 'To', type: 'color-prep', file: 'images/word_to.png', fallback: '🎯', category: 'cat_grammar' },
+            { id: 'gram_in', word: 'In', type: 'color-prep', file: 'images/word_in.png', fallback: '📥', category: 'cat_grammar' },
+            { id: 'gram_on', word: 'On', type: 'color-prep', file: 'images/word_on.png', fallback: '🔛', category: 'cat_grammar' },
+
+            // --- 18. CHOICES ---
+            { id: 'ch_this', word: 'This', type: 'color-prep', file: 'images/word_this.png', fallback: '👇', category: 'cat_choices' },
+            { id: 'ch_that', word: 'That', type: 'color-prep', file: 'images/word_that.png', fallback: '👉', category: 'cat_choices' },
+            { id: 'ch_another', word: 'Another', type: 'color-prep', file: 'images/word_another.png', fallback: '🔄', category: 'cat_choices' },
+            { id: 'ch_yes', word: 'Yes', type: 'color-social', file: 'images/word_yes.png', fallback: '✅', category: 'cat_choices' },
+            { id: 'ch_no', word: 'No', type: 'color-social', file: 'images/word_no.png', fallback: '❌', category: 'cat_choices' },
+            { id: 'ch_either', word: 'Either', type: 'color-prep', file: 'images/word_either.png', fallback: '🤷', category: 'cat_choices' },
+            { id: 'ch_both', word: 'Both', type: 'color-prep', file: 'images/word_both.png', fallback: '🙌', category: 'cat_choices' },
+
+            // --- 19. SAFETY ---
+            { id: 'safe_stop', word: 'Stop', type: 'color-social', file: 'images/word_stop.png', fallback: '🛑', category: 'cat_safety' },
+            { id: 'safe_danger', word: 'Danger', type: 'color-noun', file: 'images/word_danger.png', fallback: '⚠️', category: 'cat_safety' },
+            { id: 'safe_help', word: 'Help', type: 'color-social', file: 'images/word_help.png', fallback: '🆘', category: 'cat_safety' },
+            { id: 'safe_hurt', word: 'Hurt', type: 'color-adj', file: 'images/word_hurt.png', fallback: '🩹', category: 'cat_safety' },
+            { id: 'safe_emergency', word: 'Emergency', type: 'color-noun', file: 'images/word_emergency.png', fallback: '🚨', category: 'cat_safety' },
+            { id: 'safe_dont', word: 'Don\'t', type: 'color-social', file: 'images/word_dont.png', fallback: '🚫', category: 'cat_safety' },
+            { id: 'safe_wait', word: 'Wait', type: 'color-verb', file: 'images/word_wait.png', fallback: '✋', category: 'cat_safety' },
+            { id: 'safe_stay', word: 'Stay', type: 'color-verb', file: 'images/word_stay.png', fallback: '🧍', category: 'cat_safety' },
+
+            // --- 20. PERSONAL INFORMATION ---
+            { id: 'pers_name', word: 'Name', type: 'color-noun', file: 'images/word_name.png', fallback: '🏷️', category: 'cat_personal' },
+            { id: 'pers_age', word: 'Age', type: 'color-noun', file: 'images/word_age.png', fallback: '🎂', category: 'cat_personal' },
+            { id: 'pers_address', word: 'Address', type: 'color-noun', file: 'images/word_address.png', fallback: '🏠', category: 'cat_personal' },
+            { id: 'pers_phone', word: 'Phone', type: 'color-noun', file: 'images/word_phone.png', fallback: '📱', category: 'cat_personal' },
+            { id: 'pers_family', word: 'Family', type: 'color-noun', file: 'images/word_family.png', fallback: '👨‍👩‍👧‍👦', category: 'cat_personal' },
+            { id: 'pers_birthday', word: 'Birthday', type: 'color-noun', file: 'images/word_birthday.png', fallback: '🥳', category: 'cat_personal' }
+        ];
+
+        let sentence = [];
+        let currentViewId = 'home'; 
+        
+        const synth = window.speechSynthesis;
+        const announcer = document.getElementById('a11y-announcer');
+        const gridElement = document.getElementById('vocabulary-grid');
+        const sentenceStrip = document.getElementById('sentence-strip');
+        const emptyState = document.getElementById('empty-state');
+        const navBar = document.getElementById('navigation-bar');
+        const currentCategoryTitle = document.getElementById('current-category-title');
+        const btnHome = document.getElementById('btn-home');
+
+        
+        // Renders either the Home view (Core + Folders) or a Specific Category
+        function renderView(viewId) {
+            gridElement.innerHTML = ''; // Clear current grid
+            currentViewId = viewId;
+
+            if (viewId === 'home') {
+                navBar.classList.add('hidden');
+                
+                // 1. Render Core Words first
+                const coreWords = vocabulary.filter(item => item.category === 'home');
+                coreWords.forEach(item => createButton(item, false));
+                
+                // 2. Render Folders
+                categories.forEach(cat => createButton(cat, true));
+                
+                announcer.textContent = "Home screen loaded. Core words and categories available.";
+            } else {
+                // Show Navigation
+                navBar.classList.remove('hidden');
+                const categoryData = categories.find(c => c.id === viewId);
+                currentCategoryTitle.textContent = categoryData ? categoryData.word : "Category";
+                
+                // Render words for this specific category
+                const catWords = vocabulary.filter(item => item.category === viewId);
+                
+                if(catWords.length === 0) {
+                    gridElement.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10 text-xl font-bold">More words coming soon!</p>`;
+                } else {
+                    catWords.forEach(item => createButton(item, false));
+                }
+                
+                announcer.textContent = `Opened ${currentCategoryTitle.textContent} category.`;
+                
+                // A11y: Move focus to the back button so they know they navigated
+                setTimeout(() => btnHome.focus(), 50); 
+            }
+        }
+
+        // Helper to create the UI buttons dynamically
+        function createButton(item, isFolder) {
+            const button = document.createElement('button');
+            
+            // Differentiate style if it's a folder vs a word
+            const baseClasses = `aac-btn ${item.type} rounded-xl p-2 md:p-3 flex flex-col items-center justify-center focus:outline-none w-full relative`;
+            const heightClass = isFolder ? 'min-h-[110px] md:min-h-[130px]' : 'min-h-[100px] md:min-h-[120px]';
+            button.className = `${baseClasses} ${heightClass}`;
+            
+            // Screen reader specifics
+            const roleAction = isFolder ? `Open ${item.word} folder` : `Say ${item.word}`;
+            button.setAttribute('aria-label', roleAction);
+            
+            // Folder Indicator Icon (Top right corner)
+            const folderBadge = isFolder ? 
+                `<div class="absolute top-1 right-2 text-gray-500 opacity-60"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg></div>` : '';
+
+            // Image with Fallback Emoji logic
+            button.innerHTML = `
+                ${folderBadge}
+                <div class="h-10 w-10 md:h-14 md:w-14 mb-1 md:mb-2 flex items-center justify-center">
+                    <img src="${item.file}" alt="" class="max-h-full max-w-full object-contain drop-shadow-sm" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="text-4xl md:text-5xl hidden items-center justify-center h-full w-full drop-shadow-md" aria-hidden="true">${item.fallback}</div>
+                </div>
+                <span class="font-bold text-sm md:text-lg text-center leading-tight drop-shadow-sm">${item.word}</span>
+            `;
+            
+            button.onclick = () => {
+                if (isFolder) {
+                    speakText(item.word); // Read the folder name
+                    renderView(item.id);  // Open the folder
+                } else {
+                    addWordToSentence(item); // Add word to sentence
+                }
+            };
+            
+            gridElement.appendChild(button);
+        }
+
+        
+        function goHome() {
+            renderView('home');
+        }
+
+        function addWordToSentence(item) {
+            sentence.push(item);
+            
+            // Speak immediately for tactile/auditory correlation (Crucial for SLD)
+            speakText(item.word);
+            
+            updateSentenceStrip();
+            announcer.textContent = `${item.word} added.`;
+        }
+
+        function removeLastWord() {
+            if(sentence.length > 0) {
+                const removed = sentence.pop();
+                updateSentenceStrip();
+                announcer.textContent = `Removed ${removed.word}.`;
+            }
+        }
+
+        function clearSentence() {
+            if(sentence.length > 0){
+                sentence = [];
+                updateSentenceStrip();
+                speakText("Cleared");
+                announcer.textContent = "Sentence cleared";
+            }
+        }
+
+        function updateSentenceStrip() {
+            if (sentence.length === 0) {
+                sentenceStrip.innerHTML = '';
+                sentenceStrip.appendChild(emptyState);
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            sentenceStrip.innerHTML = '';
+            
+            sentence.forEach((item, index) => {
+                const token = document.createElement('div');
+                token.className = `${item.type} rounded-lg p-1 md:p-2 flex items-center gap-1 md:gap-2 shadow-sm animate-fade-in`;
+                
+                token.innerHTML = `
+                    <div class="h-6 w-6 md:h-8 md:w-8 flex items-center justify-center">
+                         <img src="${item.file}" alt="" class="max-h-full max-w-full object-contain" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="text-lg md:text-xl hidden" aria-hidden="true">${item.fallback}</div>
+                    </div>
+                    <span class="font-bold text-xs md:text-base">${item.word}</span>
+                `;
+                sentenceStrip.appendChild(token);
+            });
+            
+            // Auto-scroll to end
+            sentenceStrip.scrollTop = sentenceStrip.scrollHeight;
+        }
+
+        function speakSentence() {
+            if (sentence.length === 0) {
+                speakText("Please select words first.");
+                return;
+            }
+            
+            const fullText = sentence.map(item => item.word).join(' ');
+            speakText(fullText);
+            announcer.textContent = `Speaking: ${fullText}`;
+        }
+
+        function speakText(text) {
+            synth.cancel(); // Stop current speech
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.85; // Slightly slower for processing speed needs
+            utterance.pitch = 1.0;
+            
+            synth.speak(utterance);
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            renderView('home');
+            
+            // Warm up TTS
+            if(synth.getVoices().length === 0) {
+                synth.addEventListener('voiceschanged', () => {});
+            }
+        };
+    </script>
+</body>
+</html>
