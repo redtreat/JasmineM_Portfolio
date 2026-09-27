@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inclusive IDEA 13 — Simple Domain Assessment</title>
+<style>
+:root{
+  --bg:#f4f6f8;--panel:#fff;--ink:#111827;--muted:#5b6472;--line:#d7dde5;
+  --accent:#17365d;--accent2:#2457a6;--good:#176b3a;--bad:#9b2c2c;--radius:14px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.no-print{display:block}
+.app{min-height:100vh}
+header{background:#17365d;color:#fff;padding:14px 18px}
+.header-inner{max-width:1120px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.brand h1{margin:0;font-size:24px}
+.brand p{margin:2px 0 0;color:#dce6f2;font-size:12px}
+.header-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.top-btn{border:1px solid #8197b2;background:transparent;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px}
+.top-btn:hover{background:#264a72}
+main{max-width:1120px;margin:16px auto 32px;padding:0 16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 2px 10px rgba(15,23,42,.05)}
+.setup{padding:18px;margin-bottom:14px}
+.setup-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.setup-head h2{margin:0;font-size:18px}
+.setup-head p{margin:2px 0 0;font-size:11px;color:var(--muted)}
+.setup-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-top:14px}
+.field{grid-column:span 4}.field.wide{grid-column:span 6}.field.full{grid-column:1/-1}
+label{display:block;font-size:11px;font-weight:700;color:#475467;margin-bottom:5px}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;border:1px solid #cbd3de;border-radius:8px;padding:9px 10px;background:#fff;color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(36,87,166,.12);border-color:#6d8eb6}
+.choice-row{display:flex;flex-wrap:wrap;gap:7px}
+.pill{border:1px solid #d1d8e1;background:#fff;border-radius:8px;padding:7px 9px;font-size:11px;display:flex;align-items:center;gap:5px}
+.setup-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
+.btn{border:1px solid #cbd3de;background:#fff;color:#243447;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700}
+.btn:hover{background:#f7f9fc}
+.btn.primary{background:#2457a6;color:#fff;border-color:#2457a6}
+.btn.secondary{background:#365f87;color:#fff;border-color:#365f87}
+.btn.danger{color:#8e3333;background:#fffafa;border-color:#e7c8c8}
+.domain-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px}
+.domain-nav button{border:1px solid #cbd3de;background:#fff;color:#334155;border-radius:8px;padding:8px;font-size:11px;font-weight:700;text-align:left}
+.domain-nav button.active{background:#eef4fb;border-color:#9cb3cd;color:#17365d}
+.domain-nav button.done:after{content:' ✓';font-weight:900}
+.assessment{overflow:hidden}
+.domain-head{padding:15px 18px;border-bottom:1px solid var(--line)}
+.domain-head .kicker{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#667085;font-weight:800}
+.domain-head h2{margin:3px 0;font-size:22px}
+.domain-head p{margin:0;color:var(--muted);font-size:12px}
+.task-area{padding:18px}
+.task-top{display:flex;gap:9px;align-items:center;margin-bottom:12px}
+.task-top .count{font-size:11px;font-weight:800;color:#667085;white-space:nowrap}
+.progress{height:7px;background:#e8ebef;border-radius:999px;overflow:hidden;flex:1}
+.progress span{display:block;height:100%;background:#6c88a6;width:0}
+.task-card{border:1px solid #dbe1e8;border-radius:12px;padding:18px;background:#fff}
+.prompt{text-align:center;margin-bottom:14px}
+.prompt .instruction{font-size:clamp(23px,3.2vw,34px);line-height:1.2;font-weight:700}
+.prompt .helper{margin-top:5px;color:var(--muted);font-size:11px}
+.target-word{font-size:clamp(30px,4vw,48px);font-weight:800;color:#17365d}
+.options{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px;max-width:900px;margin:0 auto}
+.option{border:2px solid #d2d9e2;border-radius:12px;background:#fff;min-height:165px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.option:hover{border-color:#9fb0c2;background:#fbfcfe}
+.option.selected{border:3px solid #2457a6;background:#f3f6fa}
+.option.correct{border-color:#4f8a66;background:#f3f8f5}
+.option img{width:100%;height:120px;object-fit:contain}
+.option .label{font-size:12px;font-weight:800;margin-top:7px;color:#334155}
+.letter-set{display:grid;grid-template-columns:repeat(13,1fr);gap:6px;max-width:900px;margin:0 auto 14px}
+.letter-set button{border:1px solid #cbd3de;background:#fff;border-radius:8px;min-height:48px;font-size:18px;font-weight:800}
+.letter-set button.active{background:#2457a6;color:#fff;border-color:#2457a6}
+.quantity-area{max-width:900px;margin:14px auto 0}
+.quantity-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.quantity{border:2px solid #d2d9e2;border-radius:10px;padding:12px;background:#fff;min-height:120px;font-weight:800;text-align:center}
+.quantity.active{border-color:#2457a6;background:#f3f6fa}
+.dots{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:130px;margin:0 auto 8px}
+.dot{width:11px;height:11px;border:1px solid #526477;border-radius:50%;background:#fff}
+.sequence-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;max-width:1000px;margin:0 auto}
+.sequence-card{position:relative;border:2px solid #d2d9e2;border-radius:12px;background:#fff;min-height:190px;padding:10px;text-align:center}
+.sequence-card img{width:100%;height:125px;object-fit:contain}
+.sequence-card.active{border:3px solid #2457a6;background:#f3f6fa}
+.sequence-badge{position:absolute;left:8px;top:8px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#eef1f6;color:#526477;border:1px solid #d5dce6;font-weight:900}
+.sequence-card.active .sequence-badge{background:#2457a6;color:#fff;border-color:#2457a6}
+.sequence-caption{font-size:11px;font-weight:800;color:#334155;margin-top:6px}
+.sequence-actions{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.community-scene{max-width:760px;margin:0 auto 14px}
+.community-scene img{width:100%;height:400px;object-fit:contain;border:1px solid #d9dfe7;border-radius:10px;background:#fafbfc}
+.community-questions{display:grid;gap:10px;max-width:900px;margin:auto}
+.question{border:1px solid #d9dfe7;border-radius:10px;padding:10px}
+.question strong{display:block;margin-bottom:6px;font-size:12px}
+.question .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.question button{border:1px solid #cbd3de;background:#fff;border-radius:8px;padding:9px;font-size:11px;font-weight:700}
+.question button.active{border-color:#2457a6;background:#f3f6fa}
+.observation{max-width:900px;margin:auto}
+.observation h3{margin:0 0 5px;font-size:17px}
+.observation p{margin:0 0 12px;color:var(--muted);font-size:11px}
+.observation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.check{border:1px solid #d9dfe7;border-radius:10px;padding:11px;background:#fff;font-size:12px;font-weight:700}
+.check input{margin-right:7px}
+.task-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
+.task-footer .score{font-size:11px;font-weight:800;color:#667085}
+.footer-actions{display:flex;gap:7px}
+.results{padding:18px}
+.results h2{margin:0 0 4px}
+.results p{margin:0;color:var(--muted);font-size:12px}
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}
+.result-card{border:1px solid #d9dfe7;border-radius:10px;padding:12px;background:#fff}
+.result-card .big{font-size:24px;font-weight:900}
+.result-card .small{font-size:10px;color:var(--muted)}
+.result-table{overflow:auto;border:1px solid #d9dfe7;border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:9px 10px;border-bottom:1px solid #e7ebef;font-size:11px;text-align:left}
+th{background:#f7f9fb;color:#475467;font-size:10px;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+.results-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.focus-exit{display:none;position:fixed;right:12px;top:12px;z-index:1000;width:38px;height:38px;border-radius:50%;border:1px solid #cbd3de;background:#fff;color:#344054;font-size:22px}
+body.large-text{font-size:18px}
+body.large-text .btn,body.large-text .top-btn,body.large-text label,body.large-text .pill,body.large-text .domain-nav button{font-size:13px}
+body.high-contrast{--bg:#000;--panel:#000;--ink:#ff0;--muted:#ff0;--line:#ff0;--accent2:#ff0}
+body.high-contrast,body.high-contrast main{background:#000!important;color:#ff0!important}
+body.high-contrast .panel,body.high-contrast .setup,body.high-contrast .task-card,body.high-contrast .option,body.high-contrast .quantity,body.high-contrast .sequence-card,body.high-contrast .question,body.high-contrast .check,body.high-contrast .result-card,body.high-contrast .result-table,body.high-contrast input,body.high-contrast select,body.high-contrast textarea,body.high-contrast .domain-nav button{background:#000!important;color:#ff0!important;border-color:#ff0!important}
+body.high-contrast .domain-nav button.active,body.high-contrast .option.selected,body.high-contrast .quantity.active,body.high-contrast .sequence-card.active,body.high-contrast .question button.active{background:#ff0!important;color:#000!important}
+body.high-contrast .progress{background:#111!important;border:1px solid #ff0}.high-contrast .progress span{background:#ff0!important}
+body.focus-mode{background:#fff}
+body.focus-mode .no-student{display:none!important}
+body.focus-mode main{max-width:none;margin:0;padding:0}
+body.focus-mode .assessment{border:0;border-radius:0;box-shadow:none;min-height:100vh}
+body.focus-mode .domain-head{padding:20px 22px;text-align:center;border-bottom:1px solid #e5e7eb}
+body.focus-mode .domain-head p{display:none}
+body.focus-mode .task-area{max-width:1100px;margin:auto;padding:32px 24px 60px}
+body.focus-mode .task-top{justify-content:center}
+body.focus-mode .task-top .count{font-size:13px}
+body.focus-mode .task-card{border:0;padding:0}
+body.focus-mode .prompt{margin-bottom:30px}
+body.focus-mode .option{min-height:230px;border-width:3px}
+body.focus-mode .option img{height:175px}
+body.focus-mode .option .label{font-size:16px}
+body.focus-mode .letter-set button{min-height:58px;font-size:22px}
+body.focus-mode .quantity{min-height:160px;font-size:20px}
+body.focus-mode .sequence-card{min-height:235px}
+body.focus-mode .sequence-card img{height:165px}
+body.focus-mode .sequence-caption{font-size:14px}
+body.focus-mode .community-scene img{height:min(62vh,620px)}
+body.focus-mode .task-footer{margin-top:28px}
+body.focus-mode .task-footer .score{display:none}
+body.focus-mode .footer-actions{width:100%;justify-content:space-between}
+body.focus-mode .footer-actions .btn{width:58px;height:58px;font-size:0;padding:0;border-radius:50%}
+body.focus-mode .footer-actions .btn:before{font-size:30px}
+body.focus-mode .footer-actions .btn.prev:before{content:'‹'}
+body.focus-mode .footer-actions .btn.next:before{content:'›'}
+body.focus-mode .focus-exit{display:block}
+@media(max-width:850px){.field,.field.wide{grid-column:span 6}.options{grid-template-columns:repeat(2,1fr)}.domain-nav{grid-template-columns:repeat(2,1fr)}.sequence-grid{grid-template-columns:repeat(2,1fr)}.letter-set{grid-template-columns:repeat(9,1fr)}.observation-grid{grid-template-columns:1fr}.result-grid{grid-template-columns:1fr}.question .choices{grid-template-columns:1fr}}
+@media(max-width:600px){.header-inner{align-items:flex-start;flex-direction:column}.header-actions{justify-content:flex-start}.field,.field.wide{grid-column:1/-1}.task-area{padding:14px}.options{grid-template-columns:repeat(2,1fr);gap:8px}.option{min-height:145px}.option img{height:100px}.sequence-grid{grid-template-columns:repeat(2,1fr)}.letter-set{grid-template-columns:repeat(7,1fr)}.quantity-grid{grid-template-columns:repeat(2,1fr)}.cl-result{grid-template-columns:repeat(2,1fr)}body.focus-mode .task-area{padding:28px 12px 50px}body.focus-mode .option{min-height:185px}body.focus-mode .option img{height:135px}}
+
+/* Simple teacher checklist */
+.main-tabs{display:flex;gap:7px;margin:0 auto 14px;max-width:1120px;padding:0 16px}
+.main-tab{border:1px solid #cbd3de;background:#fff;color:#334155;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:800}
+.main-tab.active{background:#2457a6;color:#fff;border-color:#2457a6}
+.tab-section{display:none}.tab-section.active{display:block}
+.checklist{max-width:1120px;margin:0 auto 32px;padding:0 16px}
+.cl-card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(15,23,42,.05);padding:16px;margin-bottom:12px}
+.cl-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.cl-top h2{margin:0;font-size:20px}.cl-top p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.cl-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.cl-meta span{background:#f7f9fb;border:1px solid #d9dfe7;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700}
+.cl-head{font-size:14px;font-weight:800;margin:16px 0 8px}.cl-note{color:var(--muted);font-size:11px;margin:0 0 10px}
+.cl-access{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cl-check{border:1px solid #d9dfe7;border-radius:9px;padding:9px;font-size:11px;font-weight:700;background:#fff}
+.cl-check input{margin-right:6px}
+.cl-idea{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.cl-idea-row{display:grid;grid-template-columns:1fr 150px;gap:8px;align-items:center;border:1px solid #d9dfe7;border-radius:9px;padding:8px 9px}.cl-idea-name{font-size:11px;font-weight:700}.cl-idea-row select{padding:7px 8px;font-size:11px}
+.cl-skills details{border:1px solid #d9dfe7;border-radius:9px;margin:7px 0;overflow:hidden}.cl-skills summary{cursor:pointer;padding:10px;background:#f7f9fb;font-size:12px;font-weight:800}.cl-skill-row{display:grid;grid-template-columns:1fr 150px;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid #edf0f4}.cl-skill-row span{font-size:11px}.cl-rating{display:flex;gap:6px;justify-content:flex-end}.cl-rating label{margin:0;border:1px solid #cbd3de;border-radius:7px;padding:5px 7px;font-size:10px;background:#fff;color:#475467;font-weight:800}.cl-rating input{margin-right:3px}
+.cl-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.cl-btn{border:1px solid #cbd3de;background:#fff;color:#243447;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:800}.cl-btn.primary{background:#2457a6;color:#fff;border-color:#2457a6}.cl-status{font-size:10px;color:#667085;font-weight:700;margin-left:auto}
+.cl-result{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 10px}.cl-result-box{border:1px solid #d9dfe7;border-radius:9px;padding:10px;background:#f9fafb;text-align:center}.cl-result-box strong{display:block;font-size:22px;color:#17365d}.cl-result-box span{font-size:10px;color:#667085;font-weight:700}.cl-footer-note{font-size:10px;color:#667085;margin-top:8px}
+.cl-result-box{cursor:pointer;transition:none}
+.cl-result-box:focus-visible{outline:3px solid rgba(36,87,166,.18);outline-offset:2px}
+.cl-result-toggle{margin-top:8px}
+.read-aloud-row{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 auto 14px;flex-wrap:wrap}.read-aloud-btn{border:2px solid #2457a6;background:#eef4fb;color:#17365d;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;min-width:150px}.read-aloud-btn:hover{background:#e4edf8}.read-aloud-status{font-size:10px;color:#667085}body.focus-mode .read-aloud-row{margin-bottom:18px}body.focus-mode .read-aloud-btn{}
+body.focus-mode .main-tabs,body.focus-mode #checklistTab{display:none!important}
+@media(max-width:850px){.cl-access,.cl-idea,.cl-result{grid-template-columns:repeat(2,1fr)}.cl-idea-row,.cl-skill-row{grid-template-columns:1fr}.cl-rating{justify-content:flex-start}.main-tabs{padding:0 12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<button id="focusExit" class="focus-exit" onclick="toggleFocusMode()" aria-label="Exit student focus">×</button>
+<header class="no-student">
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Inclusive IDEA 13 — Domain Assessment</h1>
+      <p>Simple learner-facing quizzes with one shared response profile and one shared observation note.</p>
+    </div>
+    <div class="header-actions">
+      <button class="top-btn" onclick="toggleFocusMode()">Student Focus</button>
+      <button class="top-btn" onclick="toggleLargeText()">Larger Text</button>
+      <button class="top-btn" onclick="toggleContrast()">High Contrast</button>
+      <button class="top-btn" onclick="showResults()">Assessment Results</button>
+    </div>
+  </div>
+</header>
+
+<nav class="main-tabs no-student" aria-label="Assessment sections">
+  <button class="main-tab active" id="tabAssessment" onclick="showMainTab('assessmentTab','tabAssessment')">Assessment</button>
+  <button class="main-tab" id="tabChecklist" onclick="showMainTab('checklistTab','tabChecklist')">Checklist</button>
+</nav>
+
+<main>
+<section id="assessmentTab" class="tab-section active">
+<section class="panel setup no-student" id="setupPanel">
+  <div class="setup-head">
+    <div><h2>Learner Information & Assessment Setup</h2><p>Complete this section once. It will not repeat inside every domain.</p></div>
+    <button class="btn" onclick="toggleSetup()" id="setupToggle">Hide Setup</button>
+  </div>
+  <div id="setupBody">
+    <div class="setup-grid">
+      <div class="field wide"><label for="studentName">Learner name</label><input id="studentName" type="text" placeholder="Enter learner name"></div>
+      <div class="field"><label for="age">Age</label><input id="age" type="number" min="2" max="30" placeholder="Age"></div>
+      <div class="field"><label for="grade">Grade / class</label><input id="grade" type="text" placeholder="Grade / class"></div>
+      <div class="field"><label for="date">Assessment date</label><input id="date" type="date"></div>
+      <div class="field wide"><label for="diagnosis">Diagnosis / identified support need</label><input id="diagnosis" type="text" placeholder="Documented diagnosis or support need"></div>
+      <div class="field"><label for="assessor">Assessor / teacher</label><input id="assessor" type="text" placeholder="Name"></div>
+
+      <div class="field full">
+        <label>Assessment length</label>
+        <div class="choice-row">
+          <label class="pill"><input type="radio" name="mode" value="sample" onchange="setAssessmentMode('sample')"> Sample — up to 5 tasks in larger item domains</label>
+          <label class="pill"><input type="radio" name="mode" value="full" checked onchange="setAssessmentMode('full')"> Full — use all supplied items</label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Preferred / reliable response mode — choose once</label>
+        <div class="choice-row" id="responseModes"></div>
+      </div>
+
+      <div class="field wide">
+        <label for="readLanguage">Read Aloud language</label>
+        <select id="readLanguage">
+          <option value="en-US">American English</option>
+          <option value="en-PH">Philippine English</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="readSpeed">Audio speed</label>
+        <select id="readSpeed">
+          <option value="0.65">0.65×</option><option value="0.8">0.80×</option><option value="0.95" selected>0.95×</option><option value="1.1">1.10×</option><option value="1.25">1.25×</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label for="overallNotes">Observable notes — record once for the session</label>
+        <textarea id="overallNotes" placeholder="Record important observations that apply across the assessment: attention, response time, supports, behavior before/during tasks, communication access, accommodations, strengths, or other relevant context."></textarea>
+      </div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn" onclick="saveProgress()">Save</button>
+      <button class="btn" onclick="loadProgress()">Load</button>
+      <button class="btn danger" onclick="resetAssessment()">Reset</button>
+      <button class="btn" onclick="readDirections()">Read Directions</button>
+      <button class="btn primary" onclick="startAssessment()">Start Assessment</button>
+    </div>
+  </div>
+</section>
+
+<nav id="domainNav" class="domain-nav no-student" aria-label="Assessment domains"></nav>
+
+<section id="assessmentPanel" class="panel assessment">
+  <div id="domainHead" class="domain-head"></div>
+  <div id="taskArea" class="task-area"></div>
+</section>
+
+<section id="resultsPanel" class="panel results hidden no-student"></section>
+</section><!-- /assessmentTab -->
+
+<section id="checklistTab" class="tab-section">
+  <div class="checklist">
+    <div class="cl-card">
+      <div class="cl-top">
+        <div>
+          <h2>Inclusive Student Assessment Checklist</h2>
+          <p>Teacher checklist for broad observation and classroom support planning. It is descriptive and is not a diagnosis or eligibility test.</p>
+        </div>
+        <div class="cl-status" id="clSaveStatus">Autosave on</div>
+      </div>
+      <div class="cl-meta" id="clLearnerMeta"></div>
+      <div class="cl-actions no-print">
+        <button class="cl-btn primary" onclick="saveChecklist(true)">Save Checklist</button>
+        <button class="cl-btn" onclick="loadChecklist()">Load</button>
+        <button class="cl-btn" onclick="clearChecklist()">Clear</button>
+        <button class="cl-btn primary" type="button" onclick="toggleChecklistResult()">View Result</button>
+      </div>
+    </div>
+
+    <div class="cl-card">
+      <div class="cl-head">Access & Participation</div>
+      <p class="cl-note">Check supports that affect how the learner can access instruction or show skills.</p>
+      <div class="cl-access" id="clAccess"></div>
+      <div class="cl-head">Observable Notes</div>
+      <textarea id="clNotes" placeholder="Record observations that apply across the session: response time, attention, communication access, behavior, accommodations, strengths, and support needs."></textarea>
+    </div>
+
+    <div class="cl-card">
+      <div class="cl-head">IDEA Disability-Category Context</div>
+      <p class="cl-note">Use this only as educational context. Select the status that matches the information currently available.</p>
+      <div class="cl-idea" id="clIdea"></div>
+    </div>
+
+    <div class="cl-card cl-skills">
+      <div class="cl-head">Broad Skills Checklist</div>
+      <p class="cl-note">Rate only observed skills: <strong>A</strong> = Achieved, <strong>D</strong> = Developing, <strong>N</strong> = Needs Support.</p>
+      <div id="clSkills"></div>
+    </div>
+
+    <div class="cl-card hidden" id="clResultPanel">
+      <div class="cl-head">Checklist Result</div>
+      <div class="cl-result" id="clResult">
+        <div class="cl-result-box"><strong id="clA">0</strong><span>Achieved</span></div>
+        <div class="cl-result-box"><strong id="clD">0</strong><span>Developing</span></div>
+        <div class="cl-result-box"><strong id="clN">0</strong><span>Needs Support</span></div>
+        <div class="cl-result-box"><strong id="clTotal">0</strong><span>Rated</span></div>
+      </div>
+      <textarea id="clNextSteps" placeholder="Next steps / follow-up observations"></textarea>
+      <div class="cl-footer-note">Use more than one observation or work sample before making broader conclusions.</div>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const RESPONSE_MODES=['Speech','Sign language','AAC','Pointing','Matching','Gesture','Typing','Eye gaze','Other'];
+
+const CL_KEY='inclusiveIDEA13SimpleChecklist-v1';
+const STUDENT_STORE='inclusiveIDEA13StudentFolders-v1';
+const ACTIVE_STUDENT='inclusiveIDEA13ActiveStudent-v1';
+const CL_IDEA=['Autism','Deaf-blindness','Deafness','Emotional disturbance','Hearing impairment','Intellectual disability','Multiple disabilities','Orthopedic impairment','Other health impairment','Specific learning disability','Speech or language impairment','Traumatic brain injury','Visual impairment / blindness','Undiagnosed / not yet formally identified'];
+const CL_SKILLS={
+ 'Cognitive & Executive Function':['Understands task purpose','Follows 1–3 step directions','Sustains attention for the task','Uses a learned strategy','Shifts between tasks with a cue','Recalls information after a short delay'],
+ 'Communication & Language':['Expresses needs/preferences','Understands common classroom language','Answers or initiates questions','Uses functional vocabulary','Uses a reliable communication mode','Clarifies a communication breakdown'],
+ 'Reading & Literacy':['Recognizes target letters/symbols','Connects print to sounds/words when applicable','Recognizes familiar words','Understands a short text or picture sequence','Writes/copies at target level','Shows word awareness at target level'],
+ 'Mathematics & Numeracy':['Recognizes numerals at target range','Counts with one-to-one correspondence','Matches numeral to quantity','Compares more/less/same','Solves a simple functional math problem','Recognizes basic shapes/patterns'],
+ 'Science & Exploration':['Observes and describes a property','Sorts or classifies by a feature','Predicts a simple outcome','Follows a simple investigation sequence','Identifies familiar living/nonliving examples','Uses safety behaviors during exploration'],
+ 'Makabansa / Araling Panlipunan':['Recognizes self/family/community roles','Identifies familiar places or community helpers','Understands a simple rule or responsibility','Recognizes basic symbols or locations','Sequences a simple daily/community event','Connects learning to real-life community experiences'],
+ 'GMRC / EsP':['Recognizes basic social expectations','Identifies a feeling or need','Shows turn-taking or sharing','Uses a taught help-seeking strategy','Responds to simple social cues','Practices safety and respect routines'],
+ 'PE / Health / Arts / MAPEH':['Follows simple movement directions','Shows balance/coordination at target level','Uses tools/materials safely','Participates using an accessible response mode','Expresses ideas through art/music/movement','Identifies basic health/safety routines'],
+ 'Motor & Access':['Uses classroom tools functionally','Maintains an effective position','Coordinates movement as needed','Uses an adapted tool when appropriate','Moves through the environment safely','Manages fatigue or requests a break'],
+ 'Social, Emotional & Behavioral':['Recognizes own state/emotion','Uses a taught regulation strategy','Tolerates a change with support','Recovers after frustration','Engages with adults/peers appropriately','Accepts feedback or redirection'],
+ 'Adaptive / Self-Help':['Manages belongings','Follows familiar routines','Completes functional daily steps','Requests help or assistance','Uses materials safely','Shows increasing independence'],
+ 'Classroom Participation & Generalization':['Starts work after a cue','Persists through an agreed task','Uses supports independently when taught','Applies a skill in another setting/material','Participates in group or partner activity','Demonstrates a learned skill across opportunities']
+};
+const CL_ACCESS=['Needs enlarged/high-contrast visual access','Needs hearing access support, captions, sign, or amplification','Uses AAC, communication board, sign, or gesture','Benefits from short/simplified directions','Benefits from extra processing time','Benefits from visual schedule / first-then support','Needs sensory regulation or movement breaks','Needs adapted seating/positioning/mobility support','Needs adapted writing/cutting tools or digital access','Needs repetition/modeling/generalization practice','Needs behavior/self-regulation supports','Health/stamina/alertness affects access'];
+function initChecklist(){
+ const access=document.getElementById('clAccess'); if(access) access.innerHTML=CL_ACCESS.map((x,i)=>`<label class="cl-check"><input type="checkbox" data-cl="access_${i}">${esc(x)}</label>`).join('');
+ const idea=document.getElementById('clIdea'); if(idea) idea.innerHTML=CL_IDEA.map((x,i)=>`<div class="cl-idea-row"><div class="cl-idea-name">${i<13?i+1+'. ':''}${esc(x)}</div><select data-cl="idea_${i}"><option value="">Not selected</option><option value="Relevant">Relevant</option><option value="Consider">Consider</option><option value="Not noted">Not noted</option></select></div>`).join('');
+ const skills=document.getElementById('clSkills'); if(skills){let html='';Object.entries(CL_SKILLS).forEach(([group,items],gi)=>{html+=`<details ${gi===0?'open':''}><summary>${esc(group)}</summary>`;items.forEach((item,ii)=>{html+=`<div class="cl-skill-row"><span>${esc(item)}</span><div class="cl-rating"><label><input type="radio" name="clskill_${gi}_${ii}" value="A">A</label><label><input type="radio" name="clskill_${gi}_${ii}" value="D">D</label><label><input type="radio" name="clskill_${gi}_${ii}" value="N">N</label></div></div>`});html+='</details>'});skills.innerHTML=html}
+ updateChecklistMeta();
+ loadChecklist();
+}
+function checklistData(){
+ const obj={access:{},idea:{},skills:{},nextSteps:document.getElementById('clNextSteps')?.value||''};
+ document.querySelectorAll('[data-cl]').forEach(el=>{if(el.type==='checkbox')obj.access[el.dataset.cl]=el.checked;else obj.idea[el.dataset.cl]=el.value});
+ document.querySelectorAll('input[type=radio][name^="clskill_"]:checked').forEach(el=>obj.skills[el.name]=el.value);
+ return obj;
+}
+function updateChecklistResult(){
+ const counts={A:0,D:0,N:0,total:0};
+ document.querySelectorAll('input[type=radio][name^="clskill_"]').forEach(el=>{if(el.checked){counts[el.value]++;counts.total++}});
+ ['A','D','N','total'].forEach(k=>{const el=document.getElementById('cl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.textContent=counts[k]});
+}
+function normalizeStudentName(name){return String(name||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function currentStudentKey(){
+ const name=normalizeStudentName(document.getElementById('studentName')?.value||state.profile?.studentName||'');
+ return name || localStorage.getItem(ACTIVE_STUDENT) || '__default__';
+}
+function readStudentStore(){
+ try{
+   const raw=localStorage.getItem(STUDENT_STORE);
+   const store=raw?JSON.parse(raw):{};
+   if(!raw){
+     const oldState=localStorage.getItem(STORAGE);
+     const oldChecklist=localStorage.getItem(CL_KEY);
+     if(oldState){try{const st=JSON.parse(oldState);const k=normalizeStudentName(st.profile?.studentName)||'__default__';store[k]={assessment:st,checklist:null,updatedAt:Date.now()};}catch(e){}}
+     if(oldChecklist){
+       const k=normalizeStudentName(document.getElementById('studentName')?.value||state.profile?.studentName)||'__default__';
+       store[k]=store[k]||{assessment:null,checklist:null,updatedAt:Date.now()};
+       try{store[k].checklist=JSON.parse(oldChecklist)}catch(e){}
+     }
+   }
+   return store&&typeof store==='object'?store:{};
+ }catch(e){return {}}
+}
+function writeStudentStore(store){localStorage.setItem(STUDENT_STORE,JSON.stringify(store));}
+function saveChecklist(show=false){try{
+ const store=readStudentStore(); const k=activeStudentKey||currentStudentKey(); store[k]=store[k]||{assessment:null,checklist:null,updatedAt:0};
+ store[k].checklist=checklistData(); store[k].updatedAt=Date.now(); writeStudentStore(store); localStorage.setItem(ACTIVE_STUDENT,k);
+ updateChecklistResult(); const st=document.getElementById('clSaveStatus'); if(st&&show){st.textContent='Checklist saved';setTimeout(()=>st.textContent='Autosave on',1500)}
+}catch(e){}}
+function loadChecklist(){try{
+ const store=readStudentStore(); const d=store[currentStudentKey()]?.checklist || JSON.parse(localStorage.getItem(CL_KEY)||'null'); if(!d){updateChecklistResult();return;}
+ Object.entries(d.access||{}).forEach(([k,v])=>{const el=document.querySelector(`[data-cl="${CSS.escape(k)}"]`);if(el)el.checked=!!v});
+ Object.entries(d.idea||{}).forEach(([k,v])=>{const el=document.querySelector(`[data-cl="${CSS.escape(k)}"]`);if(el)el.value=v||''});
+ Object.entries(d.skills||{}).forEach(([k,v])=>{const el=document.querySelector(`input[name="${CSS.escape(k)}"][value="${CSS.escape(v)}"]`);if(el)el.checked=true});
+ if(document.getElementById('clNextSteps'))document.getElementById('clNextSteps').value=d.nextSteps||'';
+ updateChecklistResult();
+}catch(e){}}
+function clearChecklist(){if(!confirm('Clear the checklist saved for this learner on this device?'))return;
+ document.querySelectorAll('[data-cl]').forEach(el=>{if(el.type==='checkbox')el.checked=false;else el.value=''});
+ document.querySelectorAll('input[type=radio][name^="clskill_"]').forEach(el=>el.checked=false);
+ if(document.getElementById('clNextSteps'))document.getElementById('clNextSteps').value='';
+ try{const store=readStudentStore();const k=currentStudentKey();if(store[k])store[k].checklist=null;writeStudentStore(store);localStorage.setItem(ACTIVE_STUDENT,k);}catch(e){}
+ updateChecklistResult()}
+function toggleChecklistResult(){
+  const panel=document.getElementById('clResultPanel');
+  if(!panel)return;
+  updateChecklistResult();
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden')) panel.scrollIntoView({behavior:'auto',block:'nearest'});
+}
+function updateChecklistMeta(){const host=document.getElementById('clLearnerMeta');if(!host)return;const n=document.getElementById('studentName')?.value.trim()||'Not entered';const age=document.getElementById('age')?.value.trim()||'';const grade=document.getElementById('grade')?.value.trim()||'';const dx=document.getElementById('diagnosis')?.value.trim()||'Not entered';host.innerHTML=`<span>Learner: ${esc(n)}</span>${age?`<span>Age: ${esc(age)}</span>`:''}${grade?`<span>Class: ${esc(grade)}</span>`:''}<span>Diagnosis / support need: ${esc(dx)}</span>`}
+function showMainTab(id,buttonId){document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));document.getElementById(buttonId)?.classList.add('active');if(id==='checklistTab'){document.body.classList.remove('focus-mode');document.getElementById('setupPanel')?.classList.remove('hidden');document.getElementById('domainNav')?.classList.remove('hidden');}window.scrollTo({top:0,behavior:'auto'})}
+
+const domains=[
+ {id:'communication',title:'Functional Communication',short:'Functional Communication',subtitle:'Identify and communicate familiar objects.',instruction:'Choose the picture that matches the target.',items:['bag','water bottle','pencil','banana','scissor','book','phone','umbrella','headset','duck toy','car toy','towel','crayon','teddy bear','apple','cup','ball','shoe','chair']},
+ {id:'language',title:'Following Directions & Action Words',short:'Following Directions',subtitle:'Understand common actions and simple directions.',instruction:'Choose the picture that matches the action.',items:['run','jump','read','write','eat','drink','put on','take off','open','close','clean','help','high five','clap','listen','sleep']},
+ {id:'literacy',title:'Early Literacy',short:'Early Literacy',subtitle:'Recognize letters and basic print symbols.',instruction:'Find the target letter.',items:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),special:'alphabet'},
+ {id:'math',title:'Functional Money & Number Skills',short:'Functional Math',subtitle:'Recognize numerals and match quantity.',instruction:'Choose the target number, then match the quantity.',items:['1','2','3','4','5','6','7','8','9','10'],special:'number'},
+ {id:'shapes',title:'Visual-Spatial Concepts',short:'Shapes & Colors',subtitle:'Identify basic shapes and colors.',instruction:'Choose the picture that matches the target.',items:['circle','square','triangle','rectangle','oval','star','heart','red','orange','yellow','green','purple','blue','pink','black'],special:'shapeColor'},
+ {id:'social',title:'Emotions & Coping',short:'Emotions & Coping',subtitle:'Recognize emotions and identify a helpful response.',instruction:'Choose the picture that matches the emotion.',items:['happy','sad','angry','excited','scared','surprised','calm','proud'],special:'emotion'},
+ {id:'sequence',title:'Reading Comprehension & Sequencing',short:'Picture Sequence',subtitle:'Put a short story in the correct order.',instruction:'Number the pictures from first to last.',items:['He wakes up in the morning.','He has breakfast.','He brushes his teeth.','He goes to school.','He learns at school.'],special:'sequence'},
+ {id:'community',title:'Community & Safety',short:'Community & Safety',subtitle:'Recognize familiar places, rules, and safe actions.',instruction:'Look at the scene and answer each question.',items:['08-community-safety-scene.jpg'],special:'community'},
+ {id:'routine',title:'Daily Routines & Sequencing',short:'Daily Routines',subtitle:'Put familiar daily steps in order.',instruction:'Number the routine steps from first to last.',items:['wake up','get dressed','eat breakfast','brush teeth','go to school','do homework','play/free time','sleeps'],special:'routine'},
+ {id:'fineMotor',title:'Fine Motor / Access Observation',short:'Fine Motor / Access',subtitle:'Brief teacher observation of access and tool use.',instruction:'Observation only.',observable:['Makes an intentional mark / trace','Uses or adapts a tool','Maintains access with an appropriate support'],special:'observation',items:['fine-motor-observation']}
+];
+
+const state={domainIndex:0,taskIndex:0,mode:'full',started:false,answers:{},profile:{},sequence:{} };
+const STORAGE='inclusiveIDEA13SimpleAssessment-v1';
+function uid(d,i){return d+'__'+i}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function escJS(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ')}
+function slug(s){return String(s).toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
+function displayName(s){return String(s).replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim().replace(/^\w/,c=>c.toUpperCase())}
+function imageCandidates(base){
+ const r='resources/'; const raw=String(base||'').trim(); if(!raw)return[];
+ if(/^resources\//i.test(raw))return[raw]; if(/\.(jpe?g|png|webp|gif)$/i.test(raw))return[r+raw];
+ const no=raw.endsWith('.')?raw.slice(0,-1):raw; const vars=[raw,no,slug(no)]; const exts=['.jpg','.jpeg','.png','.webp'];
+ return [...new Set(vars.flatMap(v=>exts.map(e=>r+v+e)))];
+}
+function imageHTML(base){
+ const c=imageCandidates(base); const id='img_'+Math.random().toString(36).slice(2,9);
+ return `<div id="${id}" class="img-holder" data-candidates='${esc(JSON.stringify(c))}'><img src="${c[0]||''}" alt="${esc(displayName(base))}" onerror="tryNextImage(this)"><div class="hidden image-fallback">${esc(displayName(base))}</div></div>`;
+}
+function tryNextImage(img){const h=img.parentElement;const c=JSON.parse(h.dataset.candidates||'[]');const n=Number(img.dataset.next||0)+1;if(n<c.length){img.dataset.next=n;img.src=c[n]}else{img.classList.add('hidden');h.querySelector('.image-fallback').classList.remove('hidden')}}
+function activeIndexes(d){
+ if(d.special==='sequence'||d.special==='routine'||d.special==='community'||d.special==='observation')return[0];
+ if(state.mode==='full')return d.items.map((_,i)=>i);
+ if(d.items.length<=5)return d.items.map((_,i)=>i);
+ const x=[0,Math.floor((d.items.length-1)/4),Math.floor((d.items.length-1)/2),Math.floor((d.items.length-1)*.75),d.items.length-1]; return [...new Set(x)];
+}
+function activeItems(d){return activeIndexes(d).map(i=>({index:i,value:d.items[i]}))}
+function currentDomain(){return domains[state.domainIndex]}
+function currentItem(){return activeItems(currentDomain())[state.taskIndex]||activeItems(currentDomain())[0]}
+function answerFor(id){
+ if(!state.answers[id])state.answers[id]={selected:'',evidence:false,quantity:'',sequence:[],community:{person:'',rule:'',safe:''},observation:[false,false,false]};
+ return state.answers[id]
+}
+function renderResponseModes(){document.getElementById('responseModes').innerHTML=RESPONSE_MODES.map(x=>`<label class="pill"><input type="radio" name="reliableResponse" value="${esc(x)}">${esc(x)}</label>`).join('')}
+function setDefaultDate(){const el=document.getElementById('date');if(!el.value){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());el.value=d.toISOString().slice(0,10)}}
+function profileData(){return{
+ studentName:document.getElementById('studentName').value,age:document.getElementById('age').value,grade:document.getElementById('grade').value,date:document.getElementById('date').value,diagnosis:document.getElementById('diagnosis').value,assessor:document.getElementById('assessor').value,mode:state.mode,reliableResponse:document.querySelector('input[name="reliableResponse"]:checked')?.value||'',readLanguage:document.getElementById('readLanguage').value,readSpeed:document.getElementById('readSpeed').value,overallNotes:document.getElementById('overallNotes').value}}
+function applyProfile(p){
+ ['studentName','age','grade','date','diagnosis','assessor','readLanguage','readSpeed','overallNotes'].forEach(id=>{if(document.getElementById(id)&&p[id]!=null)document.getElementById(id).value=p[id]});
+ document.querySelectorAll('input[name="reliableResponse"]').forEach(x=>x.checked=x.value===p.reliableResponse);
+ document.querySelectorAll('input[name="mode"]').forEach(x=>x.checked=x.value===p.mode);
+}
+let activeStudentKey=localStorage.getItem(ACTIVE_STUDENT)||'__default__';
+function saveState(){try{
+ const typedKey=normalizeStudentName(document.getElementById('studentName')?.value||'');
+ // While changing the learner name, do not accidentally write the current learner's answers into another learner's record.
+ if(activeStudentKey && activeStudentKey!=='__default__' && typedKey && typedKey!==activeStudentKey) return true;
+ state.profile=profileData();
+ if(activeStudentKey==='__default__' && typedKey) activeStudentKey=typedKey;
+ const key=activeStudentKey||typedKey||'__default__';
+ const store=readStudentStore();
+ store[key]=store[key]||{assessment:null,checklist:null,updatedAt:0};
+ store[key].assessment=JSON.parse(JSON.stringify(state));
+ store[key].updatedAt=Date.now();
+ writeStudentStore(store); localStorage.setItem(ACTIVE_STUDENT,key);
+ return true;
+}catch(e){return false}}
+function saveProgress(){
+ const typedKey=normalizeStudentName(document.getElementById('studentName')?.value||'');
+ if(typedKey && typedKey!==activeStudentKey){
+   const store=readStudentStore();
+   if(store[typedKey]?.assessment){Object.assign(state,JSON.parse(JSON.stringify(store[typedKey].assessment)));applyProfile(state.profile||{});loadChecklist();}
+   activeStudentKey=typedKey;
+ }
+ const ok=saveState();
+ alert(ok?'Progress saved on this device.':'Progress could not be saved in this browser.');
+}
+function loadProgress(){try{
+ const typed=normalizeStudentName(document.getElementById('studentName')?.value||'');
+ const key=typed||localStorage.getItem(ACTIVE_STUDENT)||'__default__';
+ const store=readStudentStore(); const rec=store[key];
+ if(rec?.assessment){Object.assign(state,JSON.parse(JSON.stringify(rec.assessment)));activeStudentKey=key;applyProfile(state.profile||{});renderDomainNav();renderDomain();renderTask();loadChecklist();localStorage.setItem(ACTIVE_STUDENT,key);alert('Saved progress loaded for this learner.');return;}
+ if(typed){
+   state={domainIndex:0,taskIndex:0,mode:'full',started:false,answers:{},profile:{},sequence:{}};
+   activeStudentKey=key;
+   const current={studentName:document.getElementById('studentName').value,age:document.getElementById('age').value,grade:document.getElementById('grade').value,date:document.getElementById('date').value,diagnosis:document.getElementById('diagnosis').value,assessor:document.getElementById('assessor').value,readLanguage:document.getElementById('readLanguage').value,readSpeed:document.getElementById('readSpeed').value,overallNotes:document.getElementById('overallNotes').value};
+   applyProfile(current); renderDomainNav();renderDomain();renderTask();
+   document.querySelectorAll('[data-cl]').forEach(el=>{if(el.type==='checkbox')el.checked=false;else el.value=''});
+   document.querySelectorAll('input[type=radio][name^="clskill_"]').forEach(el=>el.checked=false);
+   if(document.getElementById('clNextSteps'))document.getElementById('clNextSteps').value=''; updateChecklistResult();
+   saveState(); saveChecklist(false); alert('New learner record ready.'); return;
+ }
+ alert('No saved progress found on this device.');
+}catch(e){alert('Saved progress could not be loaded.')}}
+function resetAssessment(){if(!confirm('Reset all assessment answers and learner setup for this learner on this device?'))return;try{const store=readStudentStore();const key=activeStudentKey||currentStudentKey();delete store[key];writeStudentStore(store);localStorage.removeItem(STORAGE);localStorage.removeItem(CL_KEY);localStorage.setItem(ACTIVE_STUDENT,key);}catch(e){}location.reload()}
+function setAssessmentMode(mode){state.mode=mode;state.taskIndex=0;saveState();renderDomain();renderTask()}
+function renderDomainNav(){const nav=document.getElementById('domainNav');nav.innerHTML=domains.map((d,i)=>{const pct=domainPercent(d);return `<button class="${i===state.domainIndex?'active':''} ${pct===100?'done':''}" onclick="goDomain(${i})">${i+1}. ${esc(d.short)}</button>`}).join('')}
+function renderDomain(){const d=currentDomain();document.getElementById('domainHead').innerHTML=`<div class="kicker">Domain ${state.domainIndex+1} of ${domains.length}</div><h2>${esc(d.title)}</h2><p>${esc(d.subtitle)}</p>`}
+function domainScore(d){const items=activeItems(d);if(d.special==='observation')return{earned:0,possible:0,done:!!items.some(({index})=>{const a=answerFor(uid(d.id,index));return a.observation.some(Boolean)})};let earned=0,possible=items.length,done=0;items.forEach(({index})=>{const a=answerFor(uid(d.id,index));if(a.evidence)earned++;if(a.evidence||a.selected||a.quantity||a.sequence.some(v=>v!==null)||Object.values(a.community||{}).some(Boolean))done++});return{earned,possible,done}}
+function domainPercent(d){const s=domainScore(d);return s.possible?Math.round(s.earned/s.possible*100):0}
+function renderTask(){const d=currentDomain();const items=activeItems(d);if(state.taskIndex>=items.length)state.taskIndex=Math.max(0,items.length-1);const ai=items[state.taskIndex];const pct=items.length?Math.round((state.taskIndex+1)/items.length*100):100;const body=d.special==='alphabet'?alphabetHTML(d,ai):d.special==='number'?numberHTML(d,ai):d.special==='shapeColor'?shapeColorHTML(d,ai):d.special==='emotion'?emotionHTML(d,ai):d.special==='sequence'?sequenceHTML(d,ai):d.special==='routine'?routineHTML(d,ai):d.special==='community'?communityHTML(d,ai):d.special==='observation'?observationHTML(d,ai):standardHTML(d,ai);
+ document.getElementById('taskArea').innerHTML=`<div class="task-top"><div class="count">${d.special==='sequence'||d.special==='routine'||d.special==='community'||d.special==='observation'?'Domain activity':'Task '+(state.taskIndex+1)+' of '+items.length}</div><div class="progress"><span style="width:${pct}%"></span></div><div class="count">${d.special==='observation'?'Observation':'Progress '+pct+'%'}</div></div><div class="task-card"><div class="read-aloud-row"><button type="button" class="read-aloud-btn" onclick="readCurrentPrompt()">🔊 Read Aloud</button><span class="read-aloud-status" id="readStatus">Ready</span></div>${body}<div class="task-footer"><div class="score">${d.special==='observation'?'Teacher observation activity':answerFor(uid(d.id,ai.index)).evidence?'Recorded correct':'Response not yet recorded'}</div><div class="footer-actions"><button class="btn prev" onclick="prevTask()" ${state.taskIndex===0?'disabled':''}>Previous</button><button class="btn primary next" onclick="nextTask()">${state.taskIndex===items.length-1?(state.domainIndex===domains.length-1?'Finish':'Next Domain'):'Next'}</button></div></div></div>`;
+ renderDomainNav(); if(state.started)window.scrollTo({top:0,behavior:'auto'})
+}
+function optionHTML(d,o,a,targetIndex){return `<button class="option ${a.selected===o?'selected':''} ${a.selected===o&&o===d.items[targetIndex]?'correct':''}" onclick="selectStandard('${escJS(d.id)}','${escJS(String(o))}')">${imageHTML(o)}<div class="label">${esc(displayName(o))}</div></button>`}
+function distractors(items,targetIndex,n=4){const pool=items.map((v,i)=>i).filter(i=>i!==targetIndex);const a=answerFor(uid(currentDomain().id,targetIndex));if(!Array.isArray(a.options)||a.options.length!==Math.min(n,items.length)){for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}const set=[targetIndex,...pool.slice(0,Math.min(n-1,pool.length))];for(let i=set.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[set[i],set[j]]=[set[j],set[i]]}a.options=set}return a.options.map(i=>items[i])}
+function standardHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const opts=distractors(d.items,ai.index);return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div><div class="target-word">${esc(displayName(ai.value))}</div></div><div class="options">${opts.map(o=>optionHTML(d,o,a,ai.index)).join('')}</div>`}
+function alphabetHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const opts=distractors(d.items,ai.index);return `<div class="prompt"><div class="instruction">Find the target letter</div><div class="target-word">${esc(ai.value)}</div></div><div class="letter-set">${opts.map(o=>`<button class="${a.selected===o?'active':''}" onclick="selectSpecial('${escJS(d.id)}','${escJS(o)}')">${esc(o)}</button>`).join('')}</div>`}
+function quantityOptions(n){const x=Number(n)||1;return [...new Set([x,Math.max(1,x-1),Math.min(10,x+1),Math.min(10,x+2)])].slice(0,4)}
+function quantityHTML(n,a){const dots=Array.from({length:n},()=>'<span class="dot"></span>').join('');return `<button class="quantity ${Number(a.quantity)===n?'active':''}" onclick="selectQuantity(${n})"><div class="dots">${dots}</div>${n}</button>`}
+function numberHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const opts=distractors(d.items,ai.index);return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div><div class="target-word">${esc(ai.value)}</div></div><div class="options">${opts.map(o=>`<button class="option ${a.selected===o?'selected':''}" onclick="selectNumber('${escJS(o)}')"><div style="font-size:52px;font-weight:900">${esc(o)}</div></button>`).join('')}</div><div class="quantity-area"><div class="instruction" style="font-weight:800;margin-bottom:8px;text-align:center">Match the quantity</div><div class="quantity-grid">${quantityOptions(ai.value).map(n=>quantityHTML(n,a)).join('')}</div></div>`}
+function shapeColorHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const opts=distractors(d.items,ai.index);return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div><div class="target-word">${esc(displayName(ai.value))}</div></div><div class="options">${opts.map(o=>optionHTML(d,o,a,ai.index)).join('')}</div>`}
+function emotionHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const opts=distractors(d.items,ai.index);return `<div class="prompt"><div class="instruction">Which picture shows this emotion?</div><div class="target-word">${esc(displayName(ai.value))}</div></div><div class="options">${opts.map(o=>optionHTML(d,o,a,ai.index)).join('')}</div>`}
+function normalizeSeq(a,n){if(!Array.isArray(a.sequence)||a.sequence.length!==n)a.sequence=Array(n).fill(null);return a.sequence}
+function sequenceHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const seq=normalizeSeq(a,d.items.length);return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div></div><div class="sequence-grid">${d.items.map((x,i)=>{const pos=seq.indexOf(i);return `<button class="sequence-card ${pos>-1?'active':''}" onclick="toggleSequence(${i})">${imageHTML(x)}<div class="sequence-badge">${pos>-1?pos+1:'?'}</div><div class="sequence-caption">${esc(x)}</div></button>`}).join('')}</div><div class="sequence-actions"><button class="btn" onclick="clearSequence()">Clear</button><button class="btn secondary" onclick="checkSequence()">Check Order</button></div>`}
+function routineHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const seq=normalizeSeq(a,d.items.length);return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div></div><div class="sequence-grid">${d.items.map((x,i)=>{const pos=seq.indexOf(i);return `<button class="sequence-card ${pos>-1?'active':''}" onclick="toggleSequence(${i})">${imageHTML(x)}<div class="sequence-badge">${pos>-1?pos+1:'?'}</div><div class="sequence-caption">${esc(displayName(x))}</div></button>`}).join('')}</div><div class="sequence-actions"><button class="btn" onclick="clearSequence()">Clear</button><button class="btn secondary" onclick="checkSequence()">Check Order</button></div>`}
+function communityHTML(d,ai){const a=answerFor(uid(d.id,ai.index));const c=a.community||{};const q=(key,title,choices)=>`<div class="question"><strong>${esc(title)}</strong><div class="choices">${choices.map(x=>`<button class="${c[key]===x?'active':''}" onclick="setCommunity('${escJS(key)}','${escJS(x)}')">${esc(x)}</button>`).join('')}</div></div>`;return `<div class="prompt"><div class="instruction">${esc(d.instruction)}</div></div><div class="community-scene">${imageHTML('08-community-safety-scene.jpg')}</div><div class="community-questions">${q('person','1. Which person or place is familiar?', ['School','Hospital','Market'])}${q('rule','2. Which action follows a safety rule?', ['Walk on the sidewalk','Run into the road','Cross anywhere'])}${q('safe','3. Which is a safe action?', ['Ask an adult for help','Go with a stranger','Leave the safe area'])}</div>`}
+function observationHTML(d,ai){const a=answerFor(uid(d.id,ai.index));return `<div class="observation"><h3>Teacher Observation</h3><p>This domain is observation-based rather than right/wrong. Record the observable behaviors below. Session notes are entered once in the setup section.</p><div class="observation-grid">${d.observable.map((x,i)=>`<label class="check"><input type="checkbox" ${a.observation[i]?'checked':''} onchange="setObservation(${i},this.checked)">${esc(x)}</label>`).join('')}</div></div>`}
+function selectStandard(did,val){const d=domains.find(x=>x.id===did);const ai=currentItem();const a=answerFor(uid(d.id,ai.index));a.selected=val;a.evidence=val===String(ai.value);saveState();renderTask()}
+function selectSpecial(did,val){const d=domains.find(x=>x.id===did);const ai=currentItem();const a=answerFor(uid(d.id,ai.index));a.selected=val;a.evidence=val===String(ai.value);saveState();renderTask()}
+function selectNumber(val){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));a.selected=val;a.evidence=(val===String(ai.value)&&Number(a.quantity)===Number(ai.value));saveState();renderTask()}
+function selectQuantity(n){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));a.quantity=n;a.evidence=(String(a.selected)===String(ai.value)&&Number(n)===Number(ai.value));saveState();renderTask()}
+function toggleSequence(i){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));const seq=normalizeSeq(a,d.items.length);const pos=seq.indexOf(i);if(pos>-1){seq[pos]=null}else{const empty=seq.indexOf(null);if(empty>-1)seq[empty]=i}a.evidence=false;saveState();renderTask()}
+function clearSequence(){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));a.sequence=Array(d.items.length).fill(null);a.evidence=false;saveState();renderTask()}
+function checkSequence(){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));const seq=normalizeSeq(a,d.items.length);a.evidence=seq.every((v,i)=>v===i);saveState();renderTask();speak(a.evidence?'Correct order.':'The order has been recorded.')}
+function setCommunity(key,val){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));a.community=a.community||{};a.community[key]=val;const correct={person:'School',rule:'Walk on the sidewalk',safe:'Ask an adult for help'};a.evidence=['person','rule','safe'].every(k=>a.community[k]===correct[k]);saveState();renderTask()}
+function setObservation(i,v){const d=currentDomain(),ai=currentItem(),a=answerFor(uid(d.id,ai.index));a.observation[i]=!!v;saveState();renderTask()}
+function prevTask(){if(state.taskIndex>0){state.taskIndex--;saveState();renderTask()}}
+function nextTask(){const items=activeItems(currentDomain());if(state.taskIndex<items.length-1){state.taskIndex++;saveState();renderTask();return}if(state.domainIndex<domains.length-1){state.domainIndex++;state.taskIndex=0;saveState();renderDomain();renderTask();return}saveState();showResults()}
+function goDomain(i){state.domainIndex=i;state.taskIndex=0;saveState();document.getElementById('resultsPanel').classList.add('hidden');document.getElementById('assessmentPanel').classList.remove('hidden');renderDomain();renderTask()}
+function startAssessment(){
+ const typedKey=normalizeStudentName(document.getElementById('studentName')?.value||'');
+ if(typedKey && typedKey!==activeStudentKey){
+   const store=readStudentStore();
+   if(store[typedKey]?.assessment){
+     Object.assign(state,JSON.parse(JSON.stringify(store[typedKey].assessment)));
+     activeStudentKey=typedKey;
+     applyProfile(state.profile||{});
+     loadChecklist();
+   }else{
+     const currentProfile=profileData();
+     state={domainIndex:0,taskIndex:0,mode:currentProfile.mode||'full',started:false,answers:{},profile:{},sequence:{}};
+     activeStudentKey=typedKey;
+     applyProfile(currentProfile);
+     document.querySelectorAll('[data-cl]').forEach(el=>{if(el.type==='checkbox')el.checked=false;else el.value=''});
+     document.querySelectorAll('input[type=radio][name^="clskill_"]').forEach(el=>el.checked=false);
+     if(document.getElementById('clNextSteps'))document.getElementById('clNextSteps').value='';
+     updateChecklistResult();
+   }
+ }
+ state.started=true;
+ saveState(); saveChecklist(false);
+ document.getElementById('setupPanel').classList.add('hidden');document.getElementById('domainNav').classList.add('hidden');document.body.classList.add('focus-mode');document.getElementById('focusExit').setAttribute('aria-hidden','false');renderDomain();renderTask();
+}
+function toggleFocusMode(){const on=!document.body.classList.contains('focus-mode');document.body.classList.toggle('focus-mode',on);document.getElementById('setupPanel').classList.toggle('hidden',on);document.getElementById('domainNav').classList.toggle('hidden',on);document.getElementById('resultsPanel').classList.add('hidden');document.getElementById('assessmentPanel').classList.remove('hidden');document.getElementById('assessmentTab').classList.add('active');document.getElementById('checklistTab').classList.remove('active');document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));document.getElementById('tabAssessment').classList.add('active');document.getElementById('focusExit').setAttribute('aria-hidden',on?'false':'true');window.scrollTo({top:0,behavior:'auto'})}
+function toggleSetup(){const body=document.getElementById('setupBody');const hidden=body.classList.toggle('hidden');document.getElementById('setupToggle').textContent=hidden?'Show Setup':'Hide Setup'}
+function toggleLargeText(){document.body.classList.toggle('large-text')}
+function toggleContrast(){document.body.classList.toggle('high-contrast');localStorage.setItem('inclusiveIDEA13Contrast',document.body.classList.contains('high-contrast')?'1':'0')}
+function overallStats(){return domains.reduce((o,d)=>{const s=domainScore(d);o.earned+=s.earned;o.possible+=s.possible;o.done+=s.done;return o},{earned:0,possible:0,done:0})}
+function showResults(){document.body.classList.remove('focus-mode');document.getElementById('assessmentTab').classList.add('active');document.getElementById('checklistTab').classList.remove('active');document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));document.getElementById('tabAssessment').classList.add('active');document.getElementById('setupPanel').classList.remove('hidden');document.getElementById('domainNav').classList.remove('hidden');document.getElementById('assessmentPanel').classList.add('hidden');const s=overallStats();document.getElementById('resultsPanel').classList.remove('hidden');document.getElementById('resultsPanel').innerHTML=`<h2>Assessment Results</h2><p>Descriptive classroom evidence from this assessment session.</p><div class="result-grid"><div class="result-card"><div class="big">${s.earned}/${s.possible}</div><div class="small">Recorded correct responses</div></div><div class="result-card"><div class="big">${s.possible?Math.round(s.earned/s.possible*100):0}%</div><div class="small">Overall response proportion</div></div><div class="result-card"><div class="big">${s.done}</div><div class="small">Domains with recorded activity</div></div></div><div class="result-table"><table><thead><tr><th>Domain</th><th>Result</th><th>Progress</th></tr></thead><tbody>${domains.map((d,i)=>{const x=domainScore(d);return `<tr><td>${i+1}. ${esc(d.title)}</td><td>${x.possible?x.earned+'/'+x.possible:(x.done?'Observed':'Not recorded')}</td><td>${x.possible?x.earned?Math.round(x.earned/x.possible*100):0:'Observation'}</td></tr>`}).join('')}</tbody></table></div><div style="margin-top:14px"><label>Session observable notes</label><textarea readonly>${esc(document.getElementById('overallNotes').value)}</textarea></div><div class="results-actions"><button class="btn" onclick="document.getElementById('resultsPanel').classList.add('hidden');document.getElementById('assessmentPanel').classList.remove('hidden');renderDomain();renderTask()">Back to Assessment</button></div>`}
+function readDirections(){speak('This assessment has one activity for each domain. Follow the prompt and choose the picture, letter, number, sequence, or answer that best matches the task. You may respond using the reliable response mode selected in the setup.')}
+function voices(){return 'speechSynthesis' in window?speechSynthesis.getVoices():[]}
+function chooseVoice(lang){const vs=voices();if(lang==='en-PH')return vs.find(v=>/^en-PH$/i.test(v.lang))||vs.find(v=>/philipp/i.test(v.name+' '+v.lang)&&/^en/i.test(v.lang))||vs.find(v=>/^en-PH/i.test(v.lang))||vs.find(v=>/^en-US/i.test(v.lang));return vs.find(v=>/^en-US$/i.test(v.lang))||vs.find(v=>/^en-US/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))}
+function speak(text){
+ const status=document.getElementById('readStatus');
+ if(!('speechSynthesis' in window)){if(status)status.textContent='Audio not available';return;}
+ const value=String(text||'').trim();
+ if(!value){if(status)status.textContent='Nothing to read';return;}
+ speechSynthesis.cancel();
+ const lang=document.getElementById('readLanguage')?.value||'en-US';
+ const rate=Math.max(.5,Math.min(1.5,Number(document.getElementById('readSpeed')?.value||.95)));
+ const u=new SpeechSynthesisUtterance(value);
+ u.lang=lang;u.rate=rate;u.volume=1;u.pitch=1;
+ const v=chooseVoice(lang);
+ if(v)u.voice=v;
+ u.onstart=()=>{if(status)status.textContent='Reading…'};
+ u.onend=()=>{if(status)status.textContent='Ready'};
+ u.onerror=()=>{if(status)status.textContent='Audio could not start'};
+ speechSynthesis.speak(u);
+}
+function currentPromptText(){const d=currentDomain(),ai=currentItem();if(d.special==='sequence'||d.special==='routine')return d.instruction;if(d.special==='community')return 'Look at the community safety scene. '+d.instruction;if(d.special==='observation')return 'Teacher observation. '+d.observable.join(', ');return d.instruction+' Target: '+displayName(String(ai.value))}
+function readCurrentPrompt(){speak(currentPromptText())}
+if('speechSynthesis'in window){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('focus-mode'))toggleFocusMode();if(e.target.matches('input,textarea,select,button'))return;if(e.key==='ArrowLeft')prevTask();if(e.key==='ArrowRight')nextTask();if(e.key.toLowerCase()==='r')readCurrentPrompt()});
+
+let autosaveTimer=null;
+function scheduleAssessmentAutosave(){clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>saveState(),400)}
+document.addEventListener('input',e=>{
+ if(e.target.closest('#checklistTab')){saveChecklist(false);updateChecklistMeta();return;}
+ if(e.target.closest('#assessmentTab') && e.target.id!=='studentName') scheduleAssessmentAutosave();
+});
+document.addEventListener('change',e=>{
+ if(e.target.closest('#checklistTab')){updateChecklistResult();saveChecklist(false);return;}
+ if(e.target.closest('#assessmentTab') && e.target.id!=='studentName') scheduleAssessmentAutosave();
+});
+document.getElementById('studentName')?.addEventListener('change',()=>{
+ const typed=normalizeStudentName(document.getElementById('studentName').value);
+ if(typed && typed!==activeStudentKey){
+   const store=readStudentStore();
+   if(store[typed]?.assessment){activeStudentKey=typed;Object.assign(state,JSON.parse(JSON.stringify(store[typed].assessment)));applyProfile(state.profile||{});loadChecklist();renderDomainNav();renderDomain();renderTask();localStorage.setItem(ACTIVE_STUDENT,typed);}
+ }
+});
+initChecklist();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){saveState();saveChecklist(false)}});
+window.addEventListener('pagehide',()=>{saveState();saveChecklist(false)});
+window.addEventListener('beforeunload',()=>{saveState();saveChecklist(false)});
+
+document.addEventListener('click',e=>{
+  if(e.target.closest('#clResult .cl-result-box')) updateChecklistResult();
+});
+
+['studentName','age','grade','diagnosis'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateChecklistMeta));
+renderResponseModes();setDefaultDate();
+if(localStorage.getItem('inclusiveIDEA13Contrast')==='1')document.body.classList.add('high-contrast');
+try{
+ const store=readStudentStore();
+ const key=localStorage.getItem(ACTIVE_STUDENT)||'__default__';
+ if(store[key]?.assessment){activeStudentKey=key;Object.assign(state,JSON.parse(JSON.stringify(store[key].assessment)));applyProfile(state.profile||{});}
+ else {
+   const old=localStorage.getItem(STORAGE);
+   if(old){Object.assign(state,JSON.parse(old));applyProfile(state.profile||{});activeStudentKey=normalizeStudentName(state.profile?.studentName)||key;}
+ }
+ localStorage.setItem(ACTIVE_STUDENT,activeStudentKey||key);
+}catch(e){}
+renderDomainNav();renderDomain();renderTask();loadChecklist();
+</script>
+</body>
+</html>
